@@ -149,6 +149,12 @@ trait PluginsList {
         }
         $pluginInfo     = install_plugin_install_status(array('name' => $name, 'slug' => $slug, 'version' => '0.1'));
         $status['info'] = $pluginInfo;
+        if (isset($_POST['active']) && $_POST['active'] == 1) {
+            $result = activate_plugin($pluginInfo['file']);
+            if (is_wp_error($result)) {
+                wp_send_json_error($result);
+            }
+        }
         wp_send_json_success($status);
     }
     public function mxp_ajax_activate_plugin() {

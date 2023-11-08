@@ -5,7 +5,7 @@ Tags: Mxp.TW, 常用外掛, 開發工具箱, 敲敲設計, Themeforest, API, 批
 Requires at least: 4.6
 Requires PHP: 7.0
 Tested up to: 6.3
-Stable tag: 2.7.6
+Stable tag: 2.7.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -77,6 +77,10 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 可以透過網站的[聯絡我](https://www.mxp.tw/contact/)，跟我說！
 
 == Changelog ==
+
+= 2.7.7 =
+
+* 搜尋外掛功能補上詢問是否需要啟用的功能。
 
 = 2.7.6 =
 
@@ -218,3 +222,4 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 == Upgrade Notice ==
 
 無
+

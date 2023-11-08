@@ -20,12 +20,17 @@ eventer(messageEvent, function(e) {
             alert('已安裝過此外掛。');
             return;
         }
+        var active = 0;
+        if (confirm('安裝後是否直接啟用？')) {
+            active = 1;
+        }
         var data = {
             "action": "mxp_install_plugin_from_url",
             "nonce": MXP.nonce,
             "dlink": e.data.download_link,
             "slug": e.data.slug,
-            "name": e.data.name
+            "name": e.data.name,
+            "active": active
         };
         if (document.mxp_install_lock == 1) {
             alert('外掛安裝中，請稍候！');

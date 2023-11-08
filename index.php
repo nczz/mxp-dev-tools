@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools - Mxp.TW
  * Plugin URI: https://goo.gl/2gLq18
  * Description: 一介資男の常用外掛整理與常用開發功能整合外掛。
- * Version: 2.7.6
+ * Version: 2.7.7
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: MIT
@@ -25,7 +25,7 @@ class MxpDevTools {
     use DatabaseOptimize;
     use SearchReplace;
     use Utility;
-    static $VERSION                   = '2.7.6';
+    static $VERSION                   = '2.7.7';
     private $themeforest_api_base_url = 'https://api.envato.com/v3';
     protected static $instance        = null;
     public $plugin_slug               = 'mxp_wp_dev_tools';

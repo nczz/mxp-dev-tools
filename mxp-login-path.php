@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Hide Login Page - Mxp.TW
+ * Plugin Name: Dev Tools: Hide Login Page - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 隱藏後台登入位置工具。啟用即更改預設登入網址為 /admin-staff/
  * Version: 2.8
@@ -98,7 +98,7 @@ class MDTHideLoginPage {
         return !($pos === false);
     }
     public function wp_loaded_action() {
-        global $pagenow;
+        global $pagenow, $error;
 
         if (is_admin() && !is_user_logged_in() && !defined('DOING_AJAX') && $pagenow !== 'admin-post.php') {
             $this->set_error_404();
@@ -161,6 +161,10 @@ class MDTHideLoginPage {
                 define('DONOTCACHEPAGE', true);
             }
 
+            $user_login = '';
+            if (isset($_POST['user_login']) && is_string($_POST['user_login'])) {
+                $user_login = wp_unslash($_POST['user_login']);
+            }
             @require_once ABSPATH . 'wp-login.php';
 
             die();

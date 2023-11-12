@@ -6,6 +6,16 @@ if (!defined('WPINC')) {
 }
 
 trait PluginsList {
+
+    public function modify_action_link($actions, $plugin_file, $plugin_data, $context) {
+        if (strpos($plugin_file, 'mxp-dev-tools') === 0 && isset($actions['delete'])) {
+            unset($actions['delete']);
+            return $actions;
+        } else {
+            return $actions;
+        }
+    }
+
     public function mxp_add_plugin_download_link($actions, $plugin_file, $plugin_data, $context) {
         if (!is_super_admin()) {
             return $actions;

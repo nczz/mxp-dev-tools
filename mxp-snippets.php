@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Snippets - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 整合 GitHub 中常用的程式碼片段。請注意，並非所有網站都適用全部的選項，有進階需求可以透過設定 wp-config.php 中此外掛預設常數，啟用或停用部分功能。
- * Version: 2.9.1
+ * Version: 2.9.2
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -90,6 +90,14 @@ if (!defined('MDT_ENABLE_OPTIMIZE_THEME')) {
 if (!defined('MDT_DISABLE_SITE_HEALTH')) {
     define('MDT_DISABLE_SITE_HEALTH', false);
 }
+// 預設不啟用全部信件轉寄功能
+if (!defined('MDT_OVERWRITE_EMAIL')) {
+    define('MDT_OVERWRITE_EMAIL', false);
+}
+// 全部信件轉寄給指定信箱
+if (!defined('MDT_OVERWRITE_EMAIL_RECEIVER')) {
+    define('MDT_OVERWRITE_EMAIL_RECEIVER', '');
+}
 
 class MDTSnippets {
     public function __construct() {
@@ -98,6 +106,7 @@ class MDTSnippets {
     }
 
     public function add_hooks() {
+        add_filter('plugin_action_links', array($this, 'modify_action_link'), 11, 4);
         // 隱藏 Freemius 的擾人通知
         if (class_exists('Freemius')) {
             remove_all_actions('admin_notices');
@@ -192,6 +201,19 @@ class MDTSnippets {
             // 關閉 site health 檢測功能
             add_filter('site_status_tests', '__return_empty_array', 100, 1);
             add_filter('debug_information', '__return_empty_array', 100, 1);
+        }
+        if (MDT_OVERWRITE_EMAIL) {
+            // 全部信件轉寄功能
+            add_filter('wp_mail', array($this, 'overwrite_wp_mail_receiver'), 11, 1);
+        }
+    }
+
+    public function modify_action_link($actions, $plugin_file, $plugin_data, $context) {
+        if (strpos($plugin_file, 'mxp-dev-tools') === 0 && isset($actions['delete'])) {
+            unset($actions['delete']);
+            return $actions;
+        } else {
+            return $actions;
         }
     }
 
@@ -482,6 +504,13 @@ jQuery(document).ready(function(){
             }
         }
         return $preempt;
+    }
+    // 給發信標題全都加上請勿回覆字樣
+    public function overwrite_wp_mail_receiver($atts) {
+        if (MDT_OVERWRITE_EMAIL_RECEIVER != '' && filter_var(MDT_OVERWRITE_EMAIL_RECEIVER, FILTER_VALIDATE_EMAIL)) {
+            $atts['to'] = MDT_OVERWRITE_EMAIL_RECEIVER;
+        }
+        return $atts;
     }
 }
 

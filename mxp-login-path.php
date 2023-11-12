@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Hide Login Page - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 隱藏後台登入位置工具。啟用即更改預設登入網址為 /admin-staff/
- * Version: 2.9.1
+ * Version: 2.9.2
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -38,6 +38,7 @@ class MDTHideLoginPage {
     }
 
     public function add_hooks() {
+        add_filter('plugin_action_links', array($this, 'modify_action_link'), 11, 4);
         add_action('pre_current_active_plugins', array($this, 'plugin_display_none'));
         add_action('plugins_loaded', array($this, 'plugins_loaded_action'), 9999);
         add_action('wp_loaded', array($this, 'wp_loaded_action'));
@@ -52,6 +53,15 @@ class MDTHideLoginPage {
         // Fires before the theme is loaded.
         add_action('setup_theme', array($this, 'setup_theme_action'), 1);
 
+    }
+
+    public function modify_action_link($actions, $plugin_file, $plugin_data, $context) {
+        if (strpos($plugin_file, 'mxp-dev-tools') === 0 && isset($actions['delete'])) {
+            unset($actions['delete']);
+            return $actions;
+        } else {
+            return $actions;
+        }
     }
 
     public function plugin_display_none() {

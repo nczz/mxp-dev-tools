@@ -40,6 +40,7 @@ class MDTHideLoginPage {
     public function add_hooks() {
         add_filter('plugin_action_links', array($this, 'modify_action_link'), 11, 4);
         add_action('pre_current_active_plugins', array($this, 'plugin_display_none'));
+        add_filter('site_transient_update_plugins', array($this, 'disable_this_plugin_updates'));
         add_action('plugins_loaded', array($this, 'plugins_loaded_action'), 9999);
         add_action('wp_loaded', array($this, 'wp_loaded_action'));
 
@@ -73,6 +74,20 @@ class MDTHideLoginPage {
                 unset($wp_list_table->items[$key]);
             }
         }
+    }
+
+    public function disable_this_plugin_updates($value) {
+        $pluginsNotUpdatable = [
+            'mxp-dev-tools/mxp-login-path.php',
+        ];
+        if (isset($value) && is_object($value)) {
+            foreach ($pluginsNotUpdatable as $plugin) {
+                if (isset($value->response[$plugin])) {
+                    unset($value->response[$plugin]);
+                }
+            }
+        }
+        return $value;
     }
 
     public function plugins_loaded_action() {

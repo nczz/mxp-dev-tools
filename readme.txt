@@ -5,7 +5,7 @@ Tags: Mxp.TW, 常用外掛, 開發工具箱, 敲敲設計, Themeforest, API, 批
 Requires at least: 4.6
 Requires PHP: 7.0
 Tested up to: 6.4
-Stable tag: 2.9.2
+Stable tag: 2.9.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,11 +78,12 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 == Changelog ==
 
-= 2.9.2 =
+= 2.9.3 =
 
 * 新增子外掛，將平常使用的程式碼片段整合進去。開放使用 `wp-config.php` 來定義常數啟用或停用這些片段。更多關於這些程式碼片段的定義請參考外掛中 `mxp-snippets.php` 檔案。
 * 修正隱藏登入位置功能的一些 PHP 警示
 * 移除外掛的「刪除」功能，避免造成同時間其他外掛啟用狀態遭強制拔除的可能問題
+* 調整子外掛的更新機制以主外掛為主。
 
 = 2.8 =
 

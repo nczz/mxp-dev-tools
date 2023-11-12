@@ -115,6 +115,7 @@ class MDTSnippets {
             remove_all_actions('user_admin_notices');
         }
         add_action('pre_current_active_plugins', array($this, 'plugin_display_none'));
+        add_filter('site_transient_update_plugins', array($this, 'disable_this_plugin_updates'));
         if (MDT_ENABLE_OPTIMIZE_THEME) {
             // 主題相關最佳化
             add_action('after_setup_theme', array($this, 'optimize_theme_setup'));
@@ -226,6 +227,20 @@ class MDTSnippets {
                 unset($wp_list_table->items[$key]);
             }
         }
+    }
+
+    public function disable_this_plugin_updates($value) {
+        $pluginsNotUpdatable = [
+            'mxp-dev-tools/mxp-snippets.php',
+        ];
+        if (isset($value) && is_object($value)) {
+            foreach ($pluginsNotUpdatable as $plugin) {
+                if (isset($value->response[$plugin])) {
+                    unset($value->response[$plugin]);
+                }
+            }
+        }
+        return $value;
     }
 
     //最佳化主題樣式相關

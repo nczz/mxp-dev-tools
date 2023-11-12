@@ -4,8 +4,8 @@ Donate link: https://mxp.tw/jT
 Tags: Mxp.TW, 常用外掛, 開發工具箱, 敲敲設計, Themeforest, API, 批次安裝, Plugin, 外掛, Admin, Installation, chinese, 中文 
 Requires at least: 4.6
 Requires PHP: 7.0
-Tested up to: 6.3
-Stable tag: 2.9
+Tested up to: 6.4
+Stable tag: 2.9.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,7 +78,7 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 == Changelog ==
 
-= 2.9 =
+= 2.9.1 =
 
 * 新增子外掛，將平常使用的程式碼片段整合進去。開放使用 `wp-config.php` 來定義常數啟用或停用這些片段。更多關於這些程式碼片段的定義請參考外掛中 `mxp-snippets.php` 檔案。
 * 修正隱藏登入位置功能的一些 PHP 警示

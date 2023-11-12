@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Snippets - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 整合 GitHub 中常用的程式碼片段。請注意，並非所有網站都適用全部的選項，有進階需求可以透過設定 wp-config.php 中此外掛預設常數，啟用或停用部分功能。
- * Version: 2.9
+ * Version: 2.9.1
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -85,6 +85,10 @@ if (!defined('MDT_DISABLE_AVATAR')) {
 // 最佳化主題相關功能
 if (!defined('MDT_ENABLE_OPTIMIZE_THEME')) {
     define('MDT_ENABLE_OPTIMIZE_THEME', true);
+}
+// 關閉網站狀態工具功能
+if (!defined('MDT_DISABLE_SITE_HEALTH')) {
+    define('MDT_DISABLE_SITE_HEALTH', false);
 }
 
 class MDTSnippets {
@@ -184,6 +188,11 @@ class MDTSnippets {
         }
         // 內對外請求管制方法
         add_filter("pre_http_request", array($this, "block_external_request"), 11, 3);
+        if (MDT_DISABLE_SITE_HEALTH) {
+            // 關閉 site health 檢測功能
+            add_filter('site_status_tests', '__return_empty_array', 100, 1);
+            add_filter('debug_information', '__return_empty_array', 100, 1);
+        }
     }
 
     public function plugin_display_none() {
@@ -457,8 +466,11 @@ jQuery(document).ready(function(){
             "api.wordpress.org",
             "downloads.wordpress.org",
         ));
-        $allow_urls = array_map('strtolower', $allow_urls);
-
+        $allow_urls     = array_map('strtolower', $allow_urls);
+        $localhost      = strtolower(parse_url(get_home_url(), PHP_URL_HOST));
+        $allow_urls[]   = $localhost;
+        $allow_urls[]   = 'localhost';
+        $allow_urls[]   = '127.0.0.1';
         $request_domain = strtolower(parse_url($url, PHP_URL_HOST));
         if (count($block_urls) == 1 && $block_urls[0] == '*') {
             if (!in_array($request_domain, $allow_urls, true)) {

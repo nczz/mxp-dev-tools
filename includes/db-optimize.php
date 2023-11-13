@@ -447,11 +447,11 @@ trait DatabaseOptimize {
                         }
                         $filesize = filesize($dump_file_path); // bytes
                         $filesize = round($filesize / 1024 / 1024, 1); // megabytes with 1 digit
-                        if (function_exists('symlink')) {
-                            symlink($dump_file_path, $download_dir);
+                        if (function_exists('rename')) {
+                            rename($dump_file_path, $download_dir);
                         } else {
-                            if (function_exists('rename')) {
-                                rename($dump_file_path, $download_dir);
+                            if (function_exists('symlink')) {
+                                symlink($dump_file_path, $download_dir);
                             } else {
                                 echo json_encode(array('success' => false, 'data' => array(), 'msg' => '請聯絡網站伺服器管理員開放 symlink 或 rename 至少其中一個方法。'));
                                 exit;

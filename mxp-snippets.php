@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Snippets - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 整合 GitHub 中常用的程式碼片段。請注意，並非所有網站都適用全部的選項，有進階需求可以透過設定 wp-config.php 中此外掛預設常數，啟用或停用部分功能。
- * Version: 2.9.4
+ * Version: 2.9.5
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -97,6 +97,14 @@ if (!defined('MDT_OVERWRITE_EMAIL')) {
 // 全部信件轉寄給指定信箱
 if (!defined('MDT_OVERWRITE_EMAIL_RECEIVER')) {
     define('MDT_OVERWRITE_EMAIL_RECEIVER', '');
+}
+// 關閉後台檔案形式操作
+if (!defined('MDT_DISALLOW_FILE_MODS')) {
+    define('MDT_DISALLOW_FILE_MODS', true);
+}
+// 單獨給指定的管理員開啟後台檔案形式操作，陣列指定管理員ID
+if (!defined('MDT_DISALLOW_FILE_MODS_ADMINS')) {
+    define('MDT_DISALLOW_FILE_MODS_ADMINS', array(1));
 }
 
 class MDTSnippets {
@@ -207,6 +215,9 @@ class MDTSnippets {
             // 全部信件轉寄功能
             add_filter('wp_mail', array($this, 'overwrite_wp_mail_receiver'), 11, 1);
         }
+        // 給內建的檔案編輯鎖多一點彈性，可以指定管理員開放
+        add_action('init', array($this, 'overwrite_file_mods'));
+
     }
 
     public function modify_action_link($actions, $plugin_file, $plugin_data, $context) {
@@ -527,7 +538,18 @@ jQuery(document).ready(function(){
         }
         return $atts;
     }
-
+    // 給內建的檔案編輯鎖多一點彈性，可以指定管理員開放
+    public function overwrite_file_mods() {
+        if (MDT_DISALLOW_FILE_MODS && !defined('DISALLOW_FILE_MODS')) {
+            if (empty(MDT_DISALLOW_FILE_MODS_ADMINS)) {
+                define('DISALLOW_FILE_MODS', true);
+            } elseif (is_array(MDT_DISALLOW_FILE_MODS_ADMINS) && in_array(get_current_user_id(), MDT_DISALLOW_FILE_MODS_ADMINS)) {
+                define('DISALLOW_FILE_MODS', false);
+            } else {
+                define('DISALLOW_FILE_MODS', true);
+            }
+        }
+    }
     public static function get_current_time_via_http() {
         $response = wp_remote_get('http://google.com',
             array(

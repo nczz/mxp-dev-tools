@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Snippets - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 整合 GitHub 中常用的程式碼片段。請注意，並非所有網站都適用全部的選項，有進階需求可以透過設定 wp-config.php 中此外掛預設常數，啟用或停用部分功能。
- * Version: 2.9.5
+ * Version: 2.9.6
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -16,7 +16,11 @@ if (!defined('ABSPATH')) {
 }
 // 是否顯示此外掛於外掛清單上
 if (!defined('MDT_SNIPPETS_DISPLAY')) {
-    define('MDT_SNIPPETS_DISPLAY', true);
+    if (defined('MDT_DISALLOW_FILE_MODS') && MDT_DISALLOW_FILE_MODS == true) {
+        define('MDT_SNIPPETS_DISPLAY', false);
+    } else {
+        define('MDT_SNIPPETS_DISPLAY', true);
+    }
 }
 // 接收網站發生錯誤時的通知信收件人
 if (!defined('MDT_RECOVERY_MODE_EMAIL')) {
@@ -217,7 +221,35 @@ class MDTSnippets {
         }
         // 給內建的檔案編輯鎖多一點彈性，可以指定管理員開放
         add_action('init', array($this, 'overwrite_file_mods'));
+        // 鎖定對總管理員的保護操作
+        add_filter('user_row_actions', array($this, 'filter_user_row_actions'), 11, 2);
+        add_filter('ms_user_row_actions', array($this, 'filter_user_row_actions'), 11, 2);
+        add_filter('get_edit_user_link', array($this, 'get_edit_user_link'), 11, 2);
+    }
 
+    public function get_edit_user_link($link, $user_id) {
+        if (is_array(MDT_DISALLOW_FILE_MODS_ADMINS) && in_array($user_id, MDT_DISALLOW_FILE_MODS_ADMINS) && get_current_user_id() != $user_id) {
+            return '#';
+        }
+        return $link;
+    }
+
+    public function filter_user_row_actions(array $actions, \WP_User $user) {
+        if (is_array(MDT_DISALLOW_FILE_MODS_ADMINS) && in_array($user->ID, MDT_DISALLOW_FILE_MODS_ADMINS) && get_current_user_id() != $user->ID) {
+            if (isset($actions['switch_to_user'])) {
+                unset($actions['switch_to_user']);
+            }
+            if (isset($actions['delete'])) {
+                unset($actions['delete']);
+            }
+            if (isset($actions['edit'])) {
+                unset($actions['edit']);
+            }
+            if (isset($actions['resetpassword'])) {
+                unset($actions['resetpassword']);
+            }
+        }
+        return $actions;
     }
 
     public function modify_action_link($actions, $plugin_file, $plugin_data, $context) {

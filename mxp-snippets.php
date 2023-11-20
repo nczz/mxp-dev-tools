@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Snippets - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 整合 GitHub 中常用的程式碼片段。請注意，並非所有網站都適用全部的選項，有進階需求可以透過設定 wp-config.php 中此外掛預設常數，啟用或停用部分功能。
- * Version: 2.9.7
+ * Version: 2.9.8
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -114,6 +114,11 @@ if (!defined('MDT_DISALLOW_FILE_MODS_ADMINS')) {
 if (!defined('MDT_SHOW_USER_ID')) {
     define('MDT_SHOW_USER_ID', true);
 }
+// 登入畫面的LOGO替換
+if (!defined('MDT_LOGINPAGE_LOGO_URL')) {
+    define('MDT_LOGINPAGE_LOGO_URL', '');
+}
+
 class MDTSnippets {
     public function __construct() {
         // 註冊程式碼片段的勾點
@@ -233,6 +238,99 @@ class MDTSnippets {
             add_filter('manage_users_columns', array($this, 'add_user_id_column'));
             add_action('manage_users_custom_column', array($this, 'show_user_id_column_content'), 10, 3);
         }
+        // 預設改變登入上方帶入連結與文字標題
+        add_filter('login_headerurl', array($this, 'login_page_url'));
+        add_filter('login_headertext', array($this, 'login_page_url_title'));
+        add_filter('login_redirect', array($this, 'login_redirect'), 11, 3);
+        if (!empty(MDT_LOGINPAGE_LOGO_URL) && filter_var(MDT_LOGINPAGE_LOGO_URL, FILTER_VALIDATE_URL)) {
+            add_action('login_enqueue_scripts', array($this, 'login_css_enqueues'));
+        }
+    }
+
+    public function login_css_enqueues() {
+        echo '<style type="text/css">' . $this->admin_login_page_css(MDT_LOGINPAGE_LOGO_URL) . '</style>';
+
+    }
+
+    public function admin_login_page_css($image) {
+        $headers = !empty($image) && ini_get('allow_url_fopen') ? @get_headers($image) : '';
+        if (!empty($image) && $headers && (strpos($headers[0], '404') === false) && (strpos($headers[0],
+            '403') === false) && ini_get('allow_url_fopen')) {
+            $img_id = attachment_url_to_postid($image);
+            if ($img_id) {
+                // First we check if the image has been uploaded on WordPress
+                $img_meta = wp_get_attachment_metadata($img_id);
+                if (isset($img_meta['width']) && isset($img_meta['height'])) {
+                    $dimensions = array(
+                        $img_meta['width'],
+                        $img_meta['height'],
+                    );
+                } else {
+                    $dimensions = array(
+                        '',
+                        '',
+                    );
+                }
+            } else {
+                // If not (could be an external URL)
+                $dimensions = getimagesize($image);
+            }
+        } else {
+            $dimensions = array(
+                '',
+                '',
+            );
+        }
+        list($width, $height) = $dimensions; // Get the uploaded image's width and height
+        if ($width != '' && $height != '' && $width < 321) {
+            // If width is recognized, use it
+            $w = $width . 'px auto';
+            $h = 'height: ' . $height . 'px;';
+        } elseif ($width > 320) {
+            // but if it's more than 320 pixels, force it to 320px
+            $r = ($width / $height); // calculate ratio
+            $w = '320px auto';
+            $h = 'height: ' . (320 / $r) . 'px;';
+        } else {
+            $w = 'auto 80px';
+            $h = '';
+        }
+        $output = 'body.login div#login h1 a {
+                background-image: url(' . $image . ');
+                background-size: ' . $w . ';'
+            . $h .
+            'width: 100%;
+                background-position: bottom;
+            }';
+
+        return $output;
+    }
+
+    public function login_redirect($redirect_to, $request, $user) {
+        $admins = false;
+        if (is_wp_error($user)) {
+            return $redirect_to;
+        }
+        if (isset($user) && is_array($user->roles)) {
+            $allowed_roles = apply_filters('mxp_dev_admin_roles', array('editor', 'administrator', 'author'));
+            $intersection  = array_intersect($user->roles, $allowed_roles);
+            if (!empty($intersection)) {
+                $admins = true;
+            }
+        }
+        if ($admins) {
+            return admin_url();
+        } else {
+            return site_url();
+        }
+    }
+
+    public function login_page_url_title() {
+        return esc_attr(get_bloginfo('name', 'display'));
+    }
+
+    public function login_page_url() {
+        return get_bloginfo('url');
     }
 
     public function get_edit_user_link($link, $user_id) {
@@ -304,7 +402,7 @@ class MDTSnippets {
         add_filter('the_generator', '__return_false');
         //管理員等級的角色不要隱藏 admin bar
         $user          = wp_get_current_user();
-        $allowed_roles = array('editor', 'administrator', 'author');
+        $allowed_roles = apply_filters('mxp_dev_show_admin_bar_roles', array('editor', 'administrator', 'author'));
         if (!array_intersect($allowed_roles, $user->roles)) {
             add_filter('show_admin_bar', '__return_false');
         }

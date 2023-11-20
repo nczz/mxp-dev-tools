@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Snippets - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 整合 GitHub 中常用的程式碼片段。請注意，並非所有網站都適用全部的選項，有進階需求可以透過設定 wp-config.php 中此外掛預設常數，啟用或停用部分功能。
- * Version: 2.9.8
+ * Version: 2.9.8.1
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -118,7 +118,14 @@ if (!defined('MDT_SHOW_USER_ID')) {
 if (!defined('MDT_LOGINPAGE_LOGO_URL')) {
     define('MDT_LOGINPAGE_LOGO_URL', '');
 }
-
+// 鎖定與更新管理員信箱
+if (!defined('MDT_ADMIN_EMAIL')) {
+    define('MDT_ADMIN_EMAIL', '');
+}
+// 預設關閉使用者註冊，把這功能交給其他會員外掛處理
+if (!defined('MDT_USER_CAN_REG')) {
+    define('MDT_USER_CAN_REG', 0);
+}
 class MDTSnippets {
     public function __construct() {
         // 註冊程式碼片段的勾點
@@ -245,6 +252,23 @@ class MDTSnippets {
         if (!empty(MDT_LOGINPAGE_LOGO_URL) && filter_var(MDT_LOGINPAGE_LOGO_URL, FILTER_VALIDATE_URL)) {
             add_action('login_enqueue_scripts', array($this, 'login_css_enqueues'));
         }
+        // 快速更改系統管理員信箱
+        if (MDT_ADMIN_EMAIL != '' && filter_var(MDT_ADMIN_EMAIL, FILTER_VALIDATE_EMAIL)) {
+            delete_option("adminhash");
+            delete_option("new_admin_email");
+            add_filter('send_site_admin_email_change_email', '__return_false', 11, 3);
+            if (get_option('admin_email') != MDT_ADMIN_EMAIL) {
+                add_action('init', array($this, 'update_admin_email'));
+            }
+        }
+        // 預設關閉使用者註冊
+        if (MDT_USER_CAN_REG != get_option('users_can_register')) {
+            update_option('users_can_register', MDT_USER_CAN_REG !== 0 ? 1 : 0);
+        }
+    }
+
+    public function update_admin_email() {
+        update_option('admin_email', MDT_ADMIN_EMAIL);
     }
 
     public function login_css_enqueues() {

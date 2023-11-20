@@ -1,5 +1,4 @@
 (function($) {
-
     function reload_status() {
         var list = $('.plugins_list[type="checkbox"]');
         for (var i = 0; i < list.length; ++i) {
@@ -12,11 +11,9 @@
             }
         }
     }
-
     $(document).ajaxStop(function() {
         reload_status();
     });
-
     $(document).ready(function() {
         reload_status();
         $('.mxp-install').click(function() {
@@ -44,7 +41,8 @@
                         $('div.' + id).html('<font color=blue>安裝成功！</font>');
                         $('#' + id).val(JSON.stringify(info));
                     } else {
-                        $('div.' + id).html('<font color=red>' + res.data.errorMessage + '</font>');
+                        var msg = res.data.errorMessage !== undefined ? res.data.errorMessage : res.data.data.msg;
+                        $('div.' + id).html('<font color=red>' + msg + '</font>');
                         $(self).prop('disabled', true);
                     }
                     next();
@@ -105,7 +103,6 @@
                     if (select.val() === 'install' && $('.plugins_list[data-id="' + id + '"]').is(":checked")) $('.mxp-install[data-id="p_' + p.id + '"]').trigger('click');
                 }
             }
-
         });
     });
 })(jQuery);

@@ -72,6 +72,9 @@ trait PluginsList {
         if ($activated === 'true' || $file != 'false') {
             wp_send_json_error(array('status' => false, 'data' => array('msg' => '已經安裝')));
         }
+        if (!wp_is_file_mod_allowed('mxp_ajax_install_plugin')) {
+            wp_send_json_error(array('status' => false, 'data' => array('msg' => '系統禁止檔案操作')));
+        }
         include_once ABSPATH . 'wp-admin/includes/file.php';
         include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
         //code reference from wp-admin/includes/ajax-actions.php
@@ -110,6 +113,9 @@ trait PluginsList {
         wp_send_json_success($status);
     }
     public function mxp_ajax_install_plugin_from_url() {
+        if (!wp_is_file_mod_allowed('mxp_ajax_install_plugin_from_url')) {
+            wp_send_json_error(array('status' => false, 'data' => array('msg' => '系統禁止檔案操作')));
+        }
         $nonce = sanitize_text_field(isset($_POST['nonce']) == true ? $_POST['nonce'] : "");
         if (!wp_verify_nonce($nonce, 'mxp-ajax-nonce-for-search-plugins')) {
             wp_send_json_error(array('status' => false, 'data' => array('msg' => '錯誤的請求來源')));
@@ -185,6 +191,9 @@ trait PluginsList {
         }
     }
     public function mxp_ajax_install_theme() {
+        if (!wp_is_file_mod_allowed('mxp_ajax_install_theme')) {
+            wp_send_json_error(array('status' => false, 'data' => array('msg' => '系統禁止檔案操作')));
+        }
         $nonce = sanitize_text_field(isset($_POST['nonce']) == true ? $_POST['nonce'] : "");
         $dlink = isset($_POST['dlink']) == true ? $_POST['dlink'] : "";
         if (!wp_verify_nonce($nonce, 'mxp-ajax-nonce-for-themeforest-list') || $dlink == "") {

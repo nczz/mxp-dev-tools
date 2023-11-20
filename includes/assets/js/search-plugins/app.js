@@ -52,7 +52,9 @@ eventer(messageEvent, function(e) {
                 }, '*');
                 alert('安裝成功！');
             } else if (res.success == false) {
-                alert('安裝失敗： CODE: ' + res.data.errorCode + '\n' + 'MSG: ' + res.data.errorMessage);
+                var code = res.data.errorCode !== undefined ? res.data.errorCode : 'NONE';
+                var msg = res.data.errorMessage !== undefined ? res.data.errorMessage : res.data.data.msg;
+                alert('安裝失敗： CODE: ' + code + '\n' + 'MSG: ' + msg);
                 document.getElementById('mxp-plugins-search').contentWindow.postMessage({
                     key: 'active_button',
                     value: e.data.slug

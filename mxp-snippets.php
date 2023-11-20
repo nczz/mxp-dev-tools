@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Snippets - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 整合 GitHub 中常用的程式碼片段。請注意，並非所有網站都適用全部的選項，有進階需求可以透過設定 wp-config.php 中此外掛預設常數，啟用或停用部分功能。
- * Version: 2.9.6
+ * Version: 2.9.7
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -110,7 +110,10 @@ if (!defined('MDT_DISALLOW_FILE_MODS')) {
 if (!defined('MDT_DISALLOW_FILE_MODS_ADMINS')) {
     define('MDT_DISALLOW_FILE_MODS_ADMINS', array(1));
 }
-
+// 顯示後台使用者編號
+if (!defined('MDT_SHOW_USER_ID')) {
+    define('MDT_SHOW_USER_ID', true);
+}
 class MDTSnippets {
     public function __construct() {
         // 註冊程式碼片段的勾點
@@ -221,10 +224,15 @@ class MDTSnippets {
         }
         // 給內建的檔案編輯鎖多一點彈性，可以指定管理員開放
         add_action('init', array($this, 'overwrite_file_mods'));
+        add_filter('file_mod_allowed', array($this, 'filter_file_mod_allowed'), 9999999, 2);
         // 鎖定對總管理員的保護操作
         add_filter('user_row_actions', array($this, 'filter_user_row_actions'), 11, 2);
         add_filter('ms_user_row_actions', array($this, 'filter_user_row_actions'), 11, 2);
         add_filter('get_edit_user_link', array($this, 'get_edit_user_link'), 11, 2);
+        if (MDT_SHOW_USER_ID) {
+            add_filter('manage_users_columns', array($this, 'add_user_id_column'));
+            add_action('manage_users_custom_column', array($this, 'show_user_id_column_content'), 10, 3);
+        }
     }
 
     public function get_edit_user_link($link, $user_id) {
@@ -580,8 +588,34 @@ jQuery(document).ready(function(){
             } else {
                 define('DISALLOW_FILE_MODS', true);
             }
+            if (!defined('DISALLOW_FILE_EDIT')) {
+                define('DISALLOW_FILE_EDIT', true);
+            }
         }
     }
+
+    public function filter_file_mod_allowed($disallow, $context) {
+        if (defined('MDT_DISALLOW_FILE_MODS') && MDT_DISALLOW_FILE_MODS === true) {
+            if (defined('MDT_DISALLOW_FILE_MODS_ADMINS') && is_array(MDT_DISALLOW_FILE_MODS_ADMINS) && in_array(get_current_user_id(), MDT_DISALLOW_FILE_MODS_ADMINS)) {
+                return MDT_DISALLOW_FILE_MODS;
+            }
+            return !MDT_DISALLOW_FILE_MODS;
+        }
+        return $disallow;
+    }
+
+    // 顯示使用者編號
+    public function add_user_id_column($columns) {
+        $columns['mxp_user_id'] = 'ID';
+        return $columns;
+    }
+    public function show_user_id_column_content($value, $column_name, $user_id) {
+        if ('mxp_user_id' === $column_name) {
+            return $user_id;
+        }
+        return $value;
+    }
+
     public static function get_current_time_via_http() {
         $response = wp_remote_get('http://google.com',
             array(

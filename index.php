@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools - Mxp.TW
  * Plugin URI: https://goo.gl/2gLq18
  * Description: 一介資男の常用外掛整理與常用開發功能整合外掛。
- * Version: 2.9.8.1
+ * Version: 2.9.9.1
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -25,7 +25,7 @@ class MxpDevTools {
     use DatabaseOptimize;
     use SearchReplace;
     use Utility;
-    static $VERSION                   = '2.9.8.1';
+    static $VERSION                   = '2.9.9';
     private $themeforest_api_base_url = 'https://api.envato.com/v3';
     protected static $instance        = null;
     public $plugin_slug               = 'mxp_wp_dev_tools';
@@ -476,10 +476,25 @@ class MxpDevTools {
                 $mxp_download_wp_content_with_uploads    = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . '/index.php')), $mxp_download_wp_content_with_uploads);
                 $mxp_download_wp_content_without_uploads = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode(WP_CONTENT_DIR . '/index.php') . '&type=folder&context=wp-content&exclude_path=' . base64_encode(WP_CONTENT_DIR . '/uploads/'));
                 $mxp_download_wp_content_without_uploads = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . '/index.php')), $mxp_download_wp_content_without_uploads);
-                $download_link                           = '<button type="button" class="button pack_wp_content" data-path="' . base64_encode(WP_CONTENT_DIR . '/index.php') . '" data-nonce="' . wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . '/index.php')) . '" data-exclude_path="" >打包 wp-content 目錄（包含 uploads）</button> | <button type="button" class="button pack_wp_content" data-path="' . base64_encode(WP_CONTENT_DIR . '/index.php') . '" data-nonce="' . wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . '/index.php')) . '" data-exclude_path="' . base64_encode(WP_CONTENT_DIR . '/uploads/') . '">打包 wp-content 目錄（不含 uploads）</button> | <button type="button" class="button cleanup_mxpdev">清除外掛暫存目錄與設定</button>';
+
+                $mxp_download_mu_plugins = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode(WP_CONTENT_DIR . '/mu-plugins/index.php') . '&type=folder&context=mu-plugins');
+                $mxp_download_mu_plugins = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . '/mu-plugins/index.php')), $mxp_download_mu_plugins);
+
+                $mxp_download_wp_config = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode(ABSPATH . 'wp-config.php') . '&type=file&context=wp-config');
+                $mxp_download_wp_config = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode(ABSPATH . 'wp-config.php')), $mxp_download_wp_config);
+
+                $download_link = '<button type="button" class="button pack_wp_content" data-path="' . base64_encode(WP_CONTENT_DIR . '/index.php') . '" data-nonce="' . wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . '/index.php')) . '" data-exclude_path="" >打包 wp-content 目錄（包含 uploads）</button> | <button type="button" class="button pack_wp_content" data-path="' . base64_encode(WP_CONTENT_DIR . '/index.php') . '" data-nonce="' . wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . '/index.php')) . '" data-exclude_path="' . base64_encode(WP_CONTENT_DIR . '/uploads/') . '">打包 wp-content 目錄（不含 uploads）</button> | <button type="button" class="button cleanup_mxpdev">清除外掛暫存目錄與設定</button> | <a href="' . $mxp_download_mu_plugins . '" class="button ">打包 mu-plugins 目錄</a> | <a href="' . $mxp_download_wp_config . '" class="button ">打包 wp-config.php 檔案</a>';
                 echo $download_link;
             }
         });
+    }
+
+    public function show_highlight_string($string) {
+        if (function_exists('highlight_string')) {
+            highlight_string($string);
+        } else {
+            echo '<pre>' . $string . '</pre>';
+        }
     }
 
     public function getwpconfig_page_cb() {
@@ -503,6 +518,7 @@ class MxpDevTools {
 
                     if (count($ip) == 4) {
                         $ipv4 = $body['IP'];
+                        // 如果有 v4 那就來問問看 v6
                         $sock = socket_create(AF_INET6, SOCK_DGRAM, SOL_UDP);
                         try {
                             //cloudflare ipv6 dns
@@ -515,6 +531,7 @@ class MxpDevTools {
                         }
                     } else {
                         $ipv6 = $body['IP'];
+                        // 反之，如果有 v6 那就來問問看 v4
                         $sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
                         try {
                             socket_connect($sock, "8.8.8.8", 53);
@@ -553,21 +570,21 @@ class MxpDevTools {
                 echo "請求異常: " . $error_message . "<br>" . PHP_EOL;
             }
             echo '<hr></br>';
-            highlight_string(file_get_contents(ABSPATH . 'wp-config.php'));
+            $this->show_highlight_string(file_get_contents(ABSPATH . 'wp-config.php'));
             echo '<hr></br>';
             echo '頁面功能參考外掛：<a href="https://tw.wordpress.org/plugins/system-dashboard/">System Dashboard</a></br>';
             echo $this->build_table($this->get_wp_all_contants());
             echo '<hr></br>';
             echo '<h2>.htaccess 檔案內容</h2></br>';
             if (file_exists(ABSPATH . '.htaccess')) {
-                highlight_string(file_get_contents(ABSPATH . '.htaccess'));
+                $this->show_highlight_string(file_get_contents(ABSPATH . '.htaccess'));
             } else {
                 echo '檔案不存在。';
             }
             echo '<hr></br>';
             echo '<h2>.user.ini 檔案內容</h2></br>';
             if (file_exists(ABSPATH . '.user.ini')) {
-                highlight_string(file_get_contents(ABSPATH . '.user.ini'));
+                $this->show_highlight_string(file_get_contents(ABSPATH . '.user.ini'));
             } else {
                 echo '檔案不存在。';
             }

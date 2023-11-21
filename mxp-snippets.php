@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Snippets - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 整合 GitHub 中常用的程式碼片段。請注意，並非所有網站都適用全部的選項，有進階需求可以透過設定 wp-config.php 中此外掛預設常數，啟用或停用部分功能。
- * Version: 2.9.8.1
+ * Version: 2.9.9.1
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -126,6 +126,11 @@ if (!defined('MDT_ADMIN_EMAIL')) {
 if (!defined('MDT_USER_CAN_REG')) {
     define('MDT_USER_CAN_REG', 0);
 }
+// 預設關閉自動回報功能，打開此設定需要重新啟用外掛
+if (!defined('MDT_SITE_HEALTH_REPORT_CRON')) {
+    define('MDT_SITE_HEALTH_REPORT_CRON', false);
+}
+
 class MDTSnippets {
     public function __construct() {
         // 註冊程式碼片段的勾點
@@ -265,6 +270,57 @@ class MDTSnippets {
         if (MDT_USER_CAN_REG != get_option('users_can_register')) {
             update_option('users_can_register', MDT_USER_CAN_REG !== 0 ? 1 : 0);
         }
+        // 設定 Cron 來回報網站狀態
+        add_filter('cron_schedules', array($this, 'add_cron_schedules'));
+        add_action('mxp_site_health_report_cron', array($this, 'mxp_site_health_report_cron_action'));
+    }
+
+    public function mxp_site_health_report_cron_action() {
+        $diagnostic_info = $this->wp_diagnostic_info();
+        $admin_email     = get_option('admin_email');
+        $req             = array(
+            'domain'       => parse_url($diagnostic_info['site_url'], PHP_URL_HOST),
+            'php'          => $diagnostic_info['PHP'],
+            'mysql'        => $diagnostic_info['MySQL'],
+            'wp'           => $diagnostic_info['WordPress'],
+            'theme'        => $diagnostic_info['Active_Theme']['Name'] . "_" . $diagnostic_info['Active_Theme']['Version'],
+            'parent_theme' => $diagnostic_info['Parent_Theme']['Name'] . "_" . $diagnostic_info['Parent_Theme']['Version'],
+            'json'         => json_encode($diagnostic_info),
+            'version'      => '1.3',
+            'knockers'     => apply_filters('mxpdev_site_health_report_cate_id', 0), //站點分類
+            'email'        => apply_filters('mxpdev_site_health_report_email', $admin_email), //比對異常時的通知人，可改其他通知人。「,」分隔多重聯絡人，總長度不得超過 100 字元
+        );
+        $response = wp_remote_post('https://api.undo.im/wp-json/mxp_knockers/v1/app/register', array(
+            'method'      => 'POST',
+            'timeout'     => 10,
+            'redirection' => 5,
+            'httpversion' => '1.1',
+            'blocking'    => false,
+            'headers'     => array('Content-Type' => 'application/json'),
+            'body'        => wp_json_encode($req),
+            'cookies'     => array(),
+            'sslverify'   => false,
+            'data_format' => 'body',
+        )
+        );
+
+        if (is_wp_error($response)) {
+            $error_message = $response->get_error_message();
+            if (defined('WP_DEBUG') && WP_DEBUG == true) {
+                error_log($req['domain'] . "_CRONJOB_ERROR: $error_message");
+            }
+        }
+        if (defined('WP_DEBUG') && WP_DEBUG == true) {
+            error_log($req['domain'] . "_CRONJOB_DONE");
+        }
+    }
+
+    public function add_cron_schedules($schedules) {
+        $schedules['mxpdev_2h'] = array(
+            'interval' => 7200, // 兩小時檢查一次變化
+            'display'  => "Every 2 Hours",
+        );
+        return $schedules;
     }
 
     public function update_admin_email() {
@@ -738,6 +794,151 @@ jQuery(document).ready(function(){
         return $value;
     }
 
+    public function mxp_get_plugin_details($plugin_path, $suffix = '') {
+        if (!function_exists('get_plugin_data')) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+        $plugin_data = get_plugin_data($plugin_path);
+        if (empty($plugin_data['Name'])) {
+            return basename($plugin_path);
+        }
+        return array("Name" => $plugin_data['Name'], "Version" => $plugin_data['Version'], "Author" => strip_tags($plugin_data['AuthorName']));
+    }
+    public function wp_diagnostic_info() {
+        global $table_prefix;
+        global $wpdb;
+        $diagnostic_info = array();
+        /*
+         * WordPress & Server Environment
+         */
+
+        $diagnostic_info['site_url']   = site_url();
+        $diagnostic_info['home_url']   = home_url();
+        $diagnostic_info['WordPress']  = get_bloginfo('version', 'display');
+        $diagnostic_info['Web_Server'] = !empty($_SERVER['SERVER_SOFTWARE']) ? $_SERVER['SERVER_SOFTWARE'] : '';
+        $diagnostic_info['PHP']        = "";
+        if (function_exists('phpversion')) {
+            $diagnostic_info['PHP'] = phpversion();
+        }
+        $diagnostic_info['MySQL']            = $wpdb->db_version();
+        $diagnostic_info['ext_mysqli']       = empty($wpdb->use_mysqli) ? 'no' : 'yes';
+        $diagnostic_info['PHP_Memory_Limit'] = "";
+        if (function_exists('ini_get')) {
+            $diagnostic_info['PHP_Memory_Limit'] = ini_get('memory_limit');
+        }
+        $diagnostic_info['WP_MEMORY_LIMIT'] = WP_MEMORY_LIMIT;
+        $diagnostic_info['Memory_Usage']    = size_format(memory_get_usage(true));
+
+        $diagnostic_info['WP_HTTP_BLOCK_EXTERNAL'] = "";
+        if (!defined('WP_HTTP_BLOCK_EXTERNAL') || !WP_HTTP_BLOCK_EXTERNAL) {
+            $diagnostic_info['WP_MEMORY_LIMIT'] = "none";
+        } else {
+            $accessible_hosts = (defined('WP_ACCESSIBLE_HOSTS')) ? WP_ACCESSIBLE_HOSTS : '';
+            if (empty($accessible_hosts)) {
+                $diagnostic_info['WP_ACCESSIBLE_HOSTS'] = "all";
+            } else {
+                $diagnostic_info['WP_ACCESSIBLE_HOSTS'] = $accessible_hosts;
+            }
+        }
+        $diagnostic_info['WP_Locale']              = get_locale();
+        $diagnostic_info['WP_UPLOADS_BY_MY']       = get_option('uploads_use_yearmonth_folders') ? 'Enabled' : 'Disabled';
+        $diagnostic_info['WP_DEBUG']               = (defined('WP_DEBUG') && WP_DEBUG) ? 'Yes' : 'No';
+        $diagnostic_info['WP_DEBUG_LOG']           = (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) ? 'Yes' : 'No';
+        $diagnostic_info['WP_DEBUG_DISPLAY']       = (defined('WP_DEBUG_DISPLAY') && WP_DEBUG_DISPLAY) ? 'Yes' : 'No';
+        $diagnostic_info['SCRIPT_DEBUG']           = (defined('SCRIPT_DEBUG') && SCRIPT_DEBUG) ? 'Yes' : 'No';
+        $diagnostic_info['WP_MAX_UPLOAD_SIZE']     = size_format(wp_max_upload_size());
+        $diagnostic_info['PHP_max_execution_time'] = "";
+        if (function_exists('ini_get')) {
+            $diagnostic_info['PHP_max_execution_time'] = ini_get('max_execution_time');
+        }
+        $diagnostic_info['WP_CRON'] = (defined('DISABLE_WP_CRON') && DISABLE_WP_CRON) ? 'Disabled' : 'Enabled';
+
+        $diagnostic_info['allow_url_fopen'] = "";
+        $allow_url_fopen                    = "";
+        if (function_exists('ini_get')) {
+            $allow_url_fopen = ini_get('allow_url_fopen');
+        }
+        if (empty($allow_url_fopen)) {
+            $diagnostic_info['allow_url_fopen'] = "Disabled";
+        } else {
+            $diagnostic_info['allow_url_fopen'] = "Enabled";
+        }
+
+        $diagnostic_info['OpenSSL'] = "";
+        if (defined('OPENSSL_VERSION_TEXT')) {
+            $diagnostic_info['OpenSSL'] = OPENSSL_VERSION_TEXT;
+        } else {
+            $diagnostic_info['OpenSSL'] = "Disabled";
+        }
+
+        $diagnostic_info['PHP_GD'] = "";
+        if (extension_loaded('gd') && function_exists('gd_info')) {
+            $gd_info                   = gd_info();
+            $diagnostic_info['PHP_GD'] = isset($gd_info['GD Version']) ? $gd_info['GD Version'] : 'Enabled';
+        } else {
+            $diagnostic_info['PHP_GD'] = 'Disabled';
+        }
+
+        $diagnostic_info['Imagick'] = "";
+        if (extension_loaded('imagick') && class_exists('Imagick') && class_exists('ImagickPixel')) {
+            $diagnostic_info['Imagick'] = 'Enabled';
+        } else {
+            $diagnostic_info['Imagick'] = 'Disabled';
+        }
+
+        /*
+         * Settings
+         */
+
+        $theme_info                      = wp_get_theme();
+        $diagnostic_info['Active_Theme'] = array();
+        $diagnostic_info['Parent_Theme'] = array();
+        if (!empty($theme_info) && is_a($theme_info, 'WP_Theme')) {
+            if (file_exists($theme_info->get_stylesheet_directory())) {
+                $diagnostic_info['Active_Theme']['Name']    = $theme_info->get('Name');
+                $diagnostic_info['Active_Theme']['Version'] = $theme_info->get('Version');
+                $diagnostic_info['Active_Theme']['Folder']  = $theme_info->get_stylesheet();
+            }
+            if (is_child_theme()) {
+                $parent_info = $theme_info->parent();
+                if (!empty($parent_info) && is_a($parent_info, 'WP_Theme')) {
+                    $diagnostic_info['Parent_Theme']['Name']    = $parent_info->get('Name');
+                    $diagnostic_info['Parent_Theme']['Version'] = $parent_info->get('Version');
+                    $diagnostic_info['Parent_Theme']['Folder']  = $parent_info->get_stylesheet();
+                }
+            } else {
+                $diagnostic_info['Parent_Theme']['Name']    = "";
+                $diagnostic_info['Parent_Theme']['Version'] = "";
+                $diagnostic_info['Parent_Theme']['Folder']  = "";
+            }
+        }
+
+        $diagnostic_info['Active_Plugins'] = array();
+        $diagnostic_info['MU_Plugins']     = array();
+        $active_plugins                    = (array) get_option('active_plugins', array());
+        if (is_multisite()) {
+            $network_active_plugins = wp_get_active_network_plugins();
+            $active_plugins         = array_map(function ($path) {
+                $plugin_dir = trailingslashit(WP_PLUGIN_DIR);
+                $plugin     = str_replace($plugin_dir, '', $path);
+                return $plugin;
+            }, $network_active_plugins);
+        }
+
+        foreach ($active_plugins as $plugin) {
+            $diagnostic_info['Active_Plugins'][] = $this->mxp_get_plugin_details(WP_PLUGIN_DIR . '/' . $plugin);
+        }
+
+        $mu_plugins = wp_get_mu_plugins();
+        if ($mu_plugins) {
+            foreach ($mu_plugins as $mu_plugin) {
+                $diagnostic_info['MU_Plugins'][] = $this->mxp_get_plugin_details($mu_plugin);
+            }
+        }
+
+        return $diagnostic_info;
+    }
+
     public static function get_current_time_via_http() {
         $response = wp_remote_get('http://google.com',
             array(
@@ -757,6 +958,19 @@ jQuery(document).ready(function(){
             $error_message = $response->get_error_message();
             return array('status' => 500, 'success' => false, 'msg' => $error_message);
         }
+    }
+    public static function activated() {
+        if (MDT_SITE_HEALTH_REPORT_CRON) {
+            if (!wp_next_scheduled('mxp_site_health_report_cron')) {
+                wp_schedule_event(time(), 'mxpdev_2h', 'mxp_site_health_report_cron');
+            }
+        } else {
+            wp_clear_scheduled_hook('mxp_site_health_report_cron');
+        }
+    }
+
+    public static function deactivated() {
+        wp_clear_scheduled_hook('mxp_site_health_report_cron');
     }
 
     public static function get_current_time_via_ntp() {
@@ -805,4 +1019,7 @@ jQuery(document).ready(function(){
     }
 }
 
-new MDTSnippets();
+$mxp_dev_snippets = new MDTSnippets();
+add_action('plugins_loaded', array($mxp_dev_snippets, 'activated'));
+// register_activation_hook(__FILE__, array($mxp_dev_snippets, 'activated'));
+register_deactivation_hook(__FILE__, array($mxp_dev_snippets, 'deactivated'));

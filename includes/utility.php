@@ -130,6 +130,12 @@ trait Utility {
             if ($file->isDir()) {
                 continue;
             }
+            $mtime = 0;
+            try {
+                $mtime = $file->getMTime();
+            } catch (\Exception $e) {
+                $mtime = 0;
+            }
             $path_parts = pathinfo($entry);
             //先記錄所有隱藏檔案
             if (strpos($path_parts['basename'], '.') === 0) {
@@ -137,36 +143,36 @@ trait Utility {
                     @unlink($entry);
                     continue;
                 }
-                $recently_mod_files['dot_files'][] = array('full_path' => $entry, 'relative_path' => str_replace(ABSPATH, '', $entry), 'name' => $path_parts['basename'], 'mod_time' => $file->getMTime());
+                $recently_mod_files['dot_files'][] = array('full_path' => $entry, 'relative_path' => str_replace(ABSPATH, '', $entry), 'name' => $path_parts['basename'], 'mod_time' => $mtime);
                 continue;
             }
             // 判斷是否是核心檔案， WP_CONTENT_DIR 之外的都算
             if (strpos($entry, WP_CONTENT_DIR) === 0) {
                 // 一天內修改的檔案
-                if ($file->getMTime() >= $day_from && $file->getMTime() <= $day_to) {
+                if ($mtime >= $day_from && $mtime <= $day_to) {
                     // 非系統檔案
                     if (strpos($entry, $theme_root) === 0) {
                         // 主題檔案
-                        $recently_mod_files['theme_files'][] = array('full_path' => $entry, 'relative_path' => str_replace($theme_root . DIRECTORY_SEPARATOR, '', $entry), 'name' => $path_parts['basename'], 'mod_time' => $file->getMTime());
+                        $recently_mod_files['theme_files'][] = array('full_path' => $entry, 'relative_path' => str_replace($theme_root . DIRECTORY_SEPARATOR, '', $entry), 'name' => $path_parts['basename'], 'mod_time' => $mtime);
                         continue;
                     }
                     if (strpos($entry, $plugin_root) === 0) {
                         // 外掛檔案
-                        $recently_mod_files['plugin_files'][] = array('full_path' => $entry, 'relative_path' => str_replace($plugin_root . DIRECTORY_SEPARATOR, '', $entry), 'name' => $path_parts['basename'], 'mod_time' => $file->getMTime());
+                        $recently_mod_files['plugin_files'][] = array('full_path' => $entry, 'relative_path' => str_replace($plugin_root . DIRECTORY_SEPARATOR, '', $entry), 'name' => $path_parts['basename'], 'mod_time' => $mtime);
                         continue;
                     }
                     if (strpos($entry, $uploads_root) === 0) {
                         // 上傳檔案
-                        $recently_mod_files['uploads_files'][] = array('full_path' => $entry, 'relative_path' => str_replace($uploads_root . DIRECTORY_SEPARATOR, '', $entry), 'name' => $path_parts['basename'], 'mod_time' => $file->getMTime());
+                        $recently_mod_files['uploads_files'][] = array('full_path' => $entry, 'relative_path' => str_replace($uploads_root . DIRECTORY_SEPARATOR, '', $entry), 'name' => $path_parts['basename'], 'mod_time' => $mtime);
                         continue;
                     }
                     // 其他未分類檔案
-                    $recently_mod_files['uncategorized_files'][] = array('full_path' => $entry, 'relative_path' => str_replace(WP_CONTENT_DIR . DIRECTORY_SEPARATOR, '', $entry), 'name' => $path_parts['basename'], 'mod_time' => $file->getMTime());
+                    $recently_mod_files['uncategorized_files'][] = array('full_path' => $entry, 'relative_path' => str_replace(WP_CONTENT_DIR . DIRECTORY_SEPARATOR, '', $entry), 'name' => $path_parts['basename'], 'mod_time' => $mtime);
                 }
             } else {
                 // 算系統檔案（預設紀錄一天內修改的檔案）
-                if ($file->getMTime() >= $day_from && $file->getMTime() <= $day_to) {
-                    $recently_mod_files['core_files'][] = array('full_path' => $entry, 'relative_path' => str_replace(ABSPATH, '', $entry), 'name' => $path_parts['basename'], 'mod_time' => $file->getMTime());
+                if ($mtime >= $day_from && $mtime <= $day_to) {
+                    $recently_mod_files['core_files'][] = array('full_path' => $entry, 'relative_path' => str_replace(ABSPATH, '', $entry), 'name' => $path_parts['basename'], 'mod_time' => $mtime);
                     continue;
                 }
             }

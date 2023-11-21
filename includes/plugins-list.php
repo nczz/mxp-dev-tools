@@ -257,11 +257,14 @@ trait PluginsList {
         $zip_file_name = '';
         $zip_file_path = '';
         if ($type == 'file') {
+            if (!file_exists($path)) {
+                exit($path . ' 檔案不存在。');
+            }
             $zip_file_name = basename($path) . '.zip';
             $zip_file_path = sys_get_temp_dir() . '/' . $zip_file_name;
             $zip->open($zip_file_path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
             if (!$zip) {
-                exit('ZIP壓縮程式執行錯誤');
+                exit('ZIP 壓縮程式執行錯誤');
             }
             $zip->addFromString(basename($path), file_get_contents($path));
         } else {
@@ -271,7 +274,10 @@ trait PluginsList {
             $zip_file_path = sys_get_temp_dir() . '/' . $zip_file_name;
             $zip->open($zip_file_path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
             if (!$zip) {
-                exit('ZIP壓縮程式執行錯誤');
+                exit('ZIP 壓縮程式執行錯誤');
+            }
+            if (!file_exists(dirname($path))) {
+                exit(dirname($path) . ' 路徑不存在。');
             }
             $files = new \RecursiveIteratorIterator(
                 new \RecursiveDirectoryIterator(dirname($path)),

@@ -29,10 +29,10 @@ trait PluginsList {
         $path = '';
         switch ($context) {
         case 'mustuse':
-            $path = WPMU_PLUGIN_DIR . '/' . $plugin_file;
+            $path = WPMU_PLUGIN_DIR . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $plugin_file);
             break;
         case 'dropins':
-            $path = WP_CONTENT_DIR . '/' . $plugin_file;
+            $path = WP_CONTENT_DIR . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $plugin_file);
             break;
         case 'all':
         case 'active':
@@ -42,7 +42,7 @@ trait PluginsList {
         case 'auto-update-disabled':
         case 'upgrade':
         default:
-            $path = WP_PLUGIN_DIR . '/' . $plugin_file;
+            $path = WP_PLUGIN_DIR . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $plugin_file);
             break;
         }
         if ($path != '') {
@@ -112,6 +112,7 @@ trait PluginsList {
         $status['info'] = json_encode($pluginInfo);
         wp_send_json_success($status);
     }
+
     public function mxp_ajax_install_plugin_from_url() {
         if (!wp_is_file_mod_allowed('mxp_ajax_install_plugin_from_url')) {
             wp_send_json_error(array('status' => false, 'data' => array('msg' => '系統禁止檔案操作')));
@@ -239,7 +240,7 @@ trait PluginsList {
         $path         = sanitize_text_field($_GET['path']);
         $type         = sanitize_text_field($_GET['type']);
         $context      = sanitize_text_field($_GET['context']);
-        $exclude_path = sanitize_text_field($_GET['exclude_path']);
+        $exclude_path = isset($_GET['exclude_path']) ? sanitize_text_field($_GET['exclude_path']) : '';
         if (empty($path) || empty($type) || !in_array($type, array('file', 'folder'), true) || empty($context) || !wp_verify_nonce($_GET['_wpnonce'], 'mxp-download-current-plugins-' . $path)) {
             exit('驗證請求失敗，請再試一次。');
         }
@@ -261,23 +262,23 @@ trait PluginsList {
                 exit($path . ' 檔案不存在。');
             }
             $zip_file_name = basename($path) . '.zip';
-            $zip_file_path = sys_get_temp_dir() . '/' . $zip_file_name;
+            $zip_file_path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $zip_file_name;
             $zip->open($zip_file_path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
             if (!$zip) {
                 exit('ZIP 壓縮程式執行錯誤');
             }
             $zip->addFromString(basename($path), file_get_contents($path));
         } else {
+            if (!file_exists(dirname($path))) {
+                exit(dirname($path) . ' 路徑不存在。');
+            }
             $split_path    = explode(DIRECTORY_SEPARATOR, $path);
             $zip_file_name = $split_path[count($split_path) - 2] . '.zip';
             $relative_path = dirname($path, 2);
-            $zip_file_path = sys_get_temp_dir() . '/' . $zip_file_name;
+            $zip_file_path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $zip_file_name;
             $zip->open($zip_file_path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
             if (!$zip) {
                 exit('ZIP 壓縮程式執行錯誤');
-            }
-            if (!file_exists(dirname($path))) {
-                exit(dirname($path) . ' 路徑不存在。');
             }
             $files = new \RecursiveIteratorIterator(
                 new \RecursiveDirectoryIterator(dirname($path)),
@@ -290,7 +291,7 @@ trait PluginsList {
                     if ($exclude_path != '' && strpos($file_path, $exclude_path) !== false) {
                         $add_flag = false;
                     }
-                    $zip_relative_path = str_replace($relative_path . '/', '', $file_path);
+                    $zip_relative_path = str_replace($relative_path . DIRECTORY_SEPARATOR, '', $file_path);
                     if ($add_flag) {
                         $zip->addFile($file_path, $zip_relative_path);
                     }

@@ -22,9 +22,9 @@ trait DatabaseOptimize {
         $export_table    = sanitize_text_field($_REQUEST['table']);
         global $wpdb;
         $sql_name      = $export_database . '-' . $export_table . '-' . date('Y-m-d-H-i-s') . '.sql';
-        $sql_full_path = sys_get_temp_dir() . '/' . $sql_name;
+        $sql_full_path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $sql_name;
         $zip_file_name = $sql_name . '.zip';
-        $zip_file_path = sys_get_temp_dir() . '/' . $zip_file_name;
+        $zip_file_path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $zip_file_name;
         // error_log($sql_full_path);
         $fp = fopen($sql_full_path, 'w');
         fwrite($fp, '-- MXP MySQL Dump' . PHP_EOL);
@@ -164,7 +164,7 @@ trait DatabaseOptimize {
         if (file_exists($sql_full_path)) {
             $zip           = new \ZipArchive();
             $zip_file_name = $sql_name . '.zip';
-            $zip_file_path = sys_get_temp_dir() . '/' . $zip_file_name;
+            $zip_file_path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $zip_file_name;
             $zip->open($zip_file_path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
             if ($zip) {
                 $zip->addFile($sql_full_path, $sql_name);
@@ -225,7 +225,7 @@ trait DatabaseOptimize {
         global $wpdb, $option_prefix, $dump_file_name, $dump_file_path, $database;
         $database       = sanitize_text_field($_REQUEST['database']);
         $dump_file_name = $database . '-' . date('Y-m-d-H-i-s') . '.sql';
-        $dump_file_path = sys_get_temp_dir() . '/' . $dump_file_name;
+        $dump_file_path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $dump_file_name;
         $table          = $wpdb->options;
         $column         = 'option_name';
         $key_column     = 'option_id';
@@ -250,7 +250,7 @@ trait DatabaseOptimize {
                 echo json_encode(array('success' => false, 'data' => array(), 'msg' => '清除資料庫中 options 失敗，請再試一次。'));
                 exit;
             }
-            $mxpdev_folder = WP_CONTENT_DIR . '/uploads/MXPDEV/';
+            $mxpdev_folder = WP_CONTENT_DIR . str_replace('/', DIRECTORY_SEPARATOR, '/uploads/MXPDEV/');
             // 清除超連結目錄中的檔案
             if (is_dir($mxpdev_folder)) {
                 $folder = opendir($mxpdev_folder);
@@ -434,11 +434,12 @@ trait DatabaseOptimize {
                             $salt = $salt . $letters[$q];
                         }
                         $new_file_name = $salt . '-' . $dump_file_name;
-                        $download_dir  = WP_CONTENT_DIR . '/uploads/MXPDEV/' . $new_file_name;
-                        if (!file_exists(WP_CONTENT_DIR . '/uploads/MXPDEV/') && !is_dir(WP_CONTENT_DIR . '/uploads/MXPDEV/')) {
-                            mkdir(WP_CONTENT_DIR . '/uploads/MXPDEV/', 0777, true);
+                        $mxpdev_folder = str_replace('/', DIRECTORY_SEPARATOR, '/uploads/MXPDEV/');
+                        $download_dir  = WP_CONTENT_DIR . $mxpdev_folder . $new_file_name;
+                        if (!file_exists(WP_CONTENT_DIR . $mxpdev_folder) && !is_dir(WP_CONTENT_DIR . $mxpdev_folder)) {
+                            mkdir(WP_CONTENT_DIR . $mxpdev_folder, 0777, true);
                         }
-                        $index_file = WP_CONTENT_DIR . '/uploads/MXPDEV/index.html';
+                        $index_file = WP_CONTENT_DIR . $mxpdev_folder . 'index.html';
                         if (!file_exists($index_file)) {
                             touch($index_file);
                         }
@@ -603,7 +604,7 @@ trait DatabaseOptimize {
             $split_path       = explode(DIRECTORY_SEPARATOR, $path);
             $zip_file_name    = $split_path[count($split_path) - 2] . '.zip';
             $relative_path    = dirname($path, 2);
-            $zip_file_path    = sys_get_temp_dir() . '/' . $zip_file_name;
+            $zip_file_path    = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $zip_file_name;
             //清除當前打包檔案
             if (file_exists($zip_file_path)) {
                 unlink($zip_file_path);
@@ -617,7 +618,7 @@ trait DatabaseOptimize {
                 update_site_option($step_0_option_name, array('success' => false, 'data' => array(), 'msg' => '清除資料庫中 options 失敗，請再試一次。'));
                 exit;
             }
-            $mxpdev_folder = WP_CONTENT_DIR . '/uploads/MXPDEV/';
+            $mxpdev_folder = WP_CONTENT_DIR . str_replace('/', DIRECTORY_SEPARATOR, '/uploads/MXPDEV/');
             // 清除超連結目錄中的檔案
             if (is_dir($mxpdev_folder)) {
                 $folder = opendir($mxpdev_folder);
@@ -653,7 +654,7 @@ trait DatabaseOptimize {
                     if ($exclude_path != '' && strpos($file_path, $exclude_path) !== false) {
                         $add_flag = false;
                     }
-                    $zip_relative_path = str_replace($relative_path . '/', '', $file_path);
+                    $zip_relative_path = str_replace($relative_path . DIRECTORY_SEPARATOR, '', $file_path);
                     // 預設就排除打包進去的資料夾（快取、備份類型）
                     $default_exclude_dirs = apply_filters(
                         'mxp_dev_default_exclude_dirs',
@@ -676,6 +677,9 @@ trait DatabaseOptimize {
                             'wp-content/plugins/akeebabackupwp',
                         )
                     );
+                    $default_exclude_dirs = array_map(function ($path) {
+                        return str_replace('/', DIRECTORY_SEPARATOR, $path);
+                    }, $default_exclude_dirs);
                     if (!empty($default_exclude_dirs)) {
                         foreach ($default_exclude_dirs as $default_exclude_dir) {
                             if (strpos($zip_relative_path, $default_exclude_dir) === 0) {
@@ -819,12 +823,13 @@ trait DatabaseOptimize {
                         $q    = rand(1, 24);
                         $salt = $salt . $letters[$q];
                     }
-                    $new_file_name = $salt . '-' . $zip_file_name;
-                    $download_dir  = WP_CONTENT_DIR . '/uploads/MXPDEV/' . $new_file_name;
-                    if (!file_exists(WP_CONTENT_DIR . '/uploads/MXPDEV/') && !is_dir(WP_CONTENT_DIR . '/uploads/MXPDEV/')) {
-                        mkdir(WP_CONTENT_DIR . '/uploads/MXPDEV/', 0777, true);
+                    $new_file_name  = $salt . '-' . $zip_file_name;
+                    $path_to_mxpdev = str_replace('/', DIRECTORY_SEPARATOR, '/uploads/MXPDEV/');
+                    $download_dir   = WP_CONTENT_DIR . $path_to_mxpdev . $new_file_name;
+                    if (!file_exists(WP_CONTENT_DIR . $path_to_mxpdev) && !is_dir(WP_CONTENT_DIR . $path_to_mxpdev)) {
+                        mkdir(WP_CONTENT_DIR . $path_to_mxpdev, 0777, true);
                     }
-                    $index_file = WP_CONTENT_DIR . '/uploads/MXPDEV/index.html';
+                    $index_file = WP_CONTENT_DIR . $path_to_mxpdev . 'index.html';
                     if (!file_exists($index_file)) {
                         touch($index_file);
                     }
@@ -1025,7 +1030,7 @@ trait DatabaseOptimize {
         if ($del === false) {
             $errors[] = array('action' => 'DELETE query', 'name' => '');
         }
-        $mxpdev_folder = WP_CONTENT_DIR . '/uploads/MXPDEV/';
+        $mxpdev_folder = WP_CONTENT_DIR . str_replace('/', DIRECTORY_SEPARATOR, '/uploads/MXPDEV/');
         if (is_dir($mxpdev_folder)) {
             $folder = opendir($mxpdev_folder);
             while (($file = readdir($folder)) !== false) {
@@ -1039,7 +1044,7 @@ trait DatabaseOptimize {
             }
             closedir($folder);
         }
-        $directory = sys_get_temp_dir() . '/';
+        $directory = sys_get_temp_dir() . DIRECTORY_SEPARATOR;
         $files     = scandir($directory);
         foreach ($files as $file) {
             // 忽略 "." 和 ".." 這兩個特殊目錄

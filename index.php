@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools - Mxp.TW
  * Plugin URI: https://goo.gl/2gLq18
  * Description: 一介資男の常用外掛整理與常用開發功能整合外掛。
- * Version: 2.9.9.2
+ * Version: 2.9.9.3
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -25,7 +25,7 @@ class MxpDevTools {
     use DatabaseOptimize;
     use SearchReplace;
     use Utility;
-    static $VERSION                   = '2.9.9.2';
+    static $VERSION                   = '2.9.9.3';
     private $themeforest_api_base_url = 'https://api.envato.com/v3';
     protected static $instance        = null;
     public $plugin_slug               = 'mxp_wp_dev_tools';
@@ -472,18 +472,22 @@ class MxpDevTools {
                 echo '</br>';
                 echo $table2;
                 echo '</br>';
-                $mxp_download_wp_content_with_uploads    = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode(WP_CONTENT_DIR . '/index.php') . '&type=folder&context=wp-content');
-                $mxp_download_wp_content_with_uploads    = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . '/index.php')), $mxp_download_wp_content_with_uploads);
-                $mxp_download_wp_content_without_uploads = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode(WP_CONTENT_DIR . '/index.php') . '&type=folder&context=wp-content&exclude_path=' . base64_encode(WP_CONTENT_DIR . '/uploads/'));
-                $mxp_download_wp_content_without_uploads = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . '/index.php')), $mxp_download_wp_content_without_uploads);
+                $mxp_download_wp_content_with_uploads    = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'index.php') . '&type=folder&context=wp-content');
+                $mxp_download_wp_content_with_uploads    = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'index.php')), $mxp_download_wp_content_with_uploads);
+                $mxp_download_wp_content_without_uploads = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'index.php') . '&type=folder&context=wp-content&exclude_path=' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR));
+                $mxp_download_wp_content_without_uploads = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'index.php')), $mxp_download_wp_content_without_uploads);
 
-                $mxp_download_mu_plugins = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode(WP_CONTENT_DIR . '/mu-plugins/index.php') . '&type=folder&context=mu-plugins');
-                $mxp_download_mu_plugins = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . '/mu-plugins/index.php')), $mxp_download_mu_plugins);
-
+                $mxp_download_mu_plugins = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'mu-plugins' . DIRECTORY_SEPARATOR . 'index.php') . '&type=folder&context=mu-plugins');
+                $mxp_download_mu_plugins = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'mu-plugins' . DIRECTORY_SEPARATOR . 'index.php')), $mxp_download_mu_plugins);
+                $check_mu_plugins        = '';
+                if (!file_exists(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'mu-plugins' . DIRECTORY_SEPARATOR)) {
+                    $check_mu_plugins        = 'disabled';
+                    $mxp_download_mu_plugins = '#';
+                }
                 $mxp_download_wp_config = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode(ABSPATH . 'wp-config.php') . '&type=file&context=wp-config');
                 $mxp_download_wp_config = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode(ABSPATH . 'wp-config.php')), $mxp_download_wp_config);
 
-                $download_link = '<button type="button" class="button pack_wp_content" data-path="' . base64_encode(WP_CONTENT_DIR . '/index.php') . '" data-nonce="' . wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . '/index.php')) . '" data-exclude_path="" >打包 wp-content 目錄（包含 uploads）</button> | <button type="button" class="button pack_wp_content" data-path="' . base64_encode(WP_CONTENT_DIR . '/index.php') . '" data-nonce="' . wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . '/index.php')) . '" data-exclude_path="' . base64_encode(WP_CONTENT_DIR . '/uploads/') . '">打包 wp-content 目錄（不含 uploads）</button> | <button type="button" class="button cleanup_mxpdev">清除外掛暫存目錄與設定</button> | <a href="' . $mxp_download_mu_plugins . '" class="button ">打包 mu-plugins 目錄</a> | <a href="' . $mxp_download_wp_config . '" class="button ">打包 wp-config.php 檔案</a>';
+                $download_link = '<button type="button" class="button pack_wp_content" data-path="' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'index.php') . '" data-nonce="' . wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'index.php')) . '" data-exclude_path="" >打包 wp-content 目錄（包含 uploads）</button> | <button type="button" class="button pack_wp_content" data-path="' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'index.php') . '" data-nonce="' . wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'index.php')) . '" data-exclude_path="' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR) . '">打包 wp-content 目錄（不含 uploads）</button> | <button type="button" class="button cleanup_mxpdev">清除外掛暫存目錄與設定</button> | <a href="' . $mxp_download_mu_plugins . '" ' . $check_mu_plugins . ' class="button ">打包 mu-plugins 目錄</a> | <a href="' . $mxp_download_wp_config . '" class="button ">打包 wp-config.php 檔案</a>';
                 echo $download_link;
             }
         });
@@ -500,7 +504,7 @@ class MxpDevTools {
     public function getwpconfig_page_cb() {
         $this->page_wraper('查看網站各項設定', function () {
             echo '<h2>網路資訊</h2></br>';
-            $response = wp_remote_get('https://undo.im/json?from=' . get_site_url());
+            $response = wp_remote_get('https://undo.im/json?v=' . self::$VERSION . '&from=' . get_site_url(), array('sslverify' => false, 'timeout' => 5));
             if (!is_wp_error($response)) {
                 if (200 == wp_remote_retrieve_response_code($response)) {
                     $body = json_decode(wp_remote_retrieve_body($response), true);
@@ -518,28 +522,64 @@ class MxpDevTools {
 
                     if (count($ip) == 4) {
                         $ipv4 = $body['IP'];
+                        $ipv6 = 'NONE';
                         // 如果有 v4 那就來問問看 v6
-                        $sock = socket_create(AF_INET6, SOCK_DGRAM, SOL_UDP);
-                        try {
-                            //cloudflare ipv6 dns
-                            socket_connect($sock, "2606:4700:4700::1111", 53);
-                            socket_getsockname($sock, $qname);
-                            socket_close($sock);
-                            $ipv6 = $qname;
-                        } catch (\Exception $ex) {
-                            $ipv6 = '無 IPv6 資源！';
+                        if (function_exists('socket_create') && function_exists('socket_connect') && function_exists('socket_getsockname') && function_exists('socket_close')) {
+                            $sock = socket_create(AF_INET6, SOCK_DGRAM, SOL_UDP);
+                            try {
+                                //cloudflare ipv6 dns
+                                socket_connect($sock, "2606:4700:4700::1111", 53);
+                                socket_getsockname($sock, $qname);
+                                socket_close($sock);
+                                $ipv6 = $qname;
+                            } catch (\Exception $ex) {
+                                $ipv6 = '無 IPv6 資源！';
+                            }
+                        }
+                        if (function_exists('fsockopen') && 'NONE' === $ipv6 && function_exists('stream_socket_get_name')) {
+                            try {
+                                $fp = fsockopen('tcp://[2606:4700:4700::1111]', 53, $errno, $errstr, 5);
+                                if (!$fp) {
+                                    $ipv6 = "fsockopen get IPv6 error: $errstr ($errno)";
+                                } else {
+                                    $local_endpoint = stream_socket_get_name($fp, false); // 拿到本機請求的 socket 資源
+                                    if (preg_match('/\[(.*?)\]/', $local_endpoint, $matches)) {
+                                        $ipv6 = $matches[1];
+                                    }
+                                    fclose($fp);
+                                }
+                            } catch (\Exception $ex) {
+                                $ipv6 = '無 IPv6 資源！';
+                            }
                         }
                     } else {
                         $ipv6 = $body['IP'];
+                        $ipv4 = 'NONE';
                         // 反之，如果有 v6 那就來問問看 v4
-                        $sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
-                        try {
-                            socket_connect($sock, "8.8.8.8", 53);
-                            socket_getsockname($sock, $qname);
-                            socket_close($sock);
-                            $ipv4 = $qname;
-                        } catch (\Exception $ex) {
-                            $ipv4 = '無 IPv4 資源！';
+                        if (function_exists('socket_create') && function_exists('socket_connect') && function_exists('socket_getsockname') && function_exists('socket_close')) {
+                            $sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+                            try {
+                                socket_connect($sock, "8.8.8.8", 53);
+                                socket_getsockname($sock, $qname);
+                                socket_close($sock);
+                                $ipv4 = $qname;
+                            } catch (\Exception $ex) {
+                                $ipv4 = '無 IPv4 資源！';
+                            }
+                        }
+                        if (function_exists('fsockopen') && 'NONE' === $ipv4 && function_exists('stream_socket_get_name')) {
+                            try {
+                                $fp = fsockopen('tcp://8.8.8.8', 53, $errno, $errstr, 5);
+                                if (!$fp) {
+                                    $ipv4 = "fsockopen get IPv4 error: $errstr ($errno)";
+                                } else {
+                                    $local_endpoint = stream_socket_get_name($fp, false); // 拿到本機請求的 socket 資源
+                                    $ipv4           = current(explode(':', $local_endpoint));
+                                    fclose($fp);
+                                }
+                            } catch (\Exception $ex) {
+                                $ipv4 = '無 IPv4 資源！';
+                            }
                         }
                     }
                     restore_error_handler();
@@ -622,7 +662,7 @@ class MxpDevTools {
                 } else {
                     $child_theme = '無';
                 }
-                $path                     = $theme_info->get_stylesheet_directory() . '/style.css';
+                $path                     = $theme_info->get_stylesheet_directory() . DIRECTORY_SEPARATOR . 'style.css';
                 $type                     = 'folder';
                 $context                  = 'themes';
                 $mxp_download_action_link = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode($path) . '&type=' . $type . '&context=' . $context);

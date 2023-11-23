@@ -29,7 +29,7 @@ $key           = $option_prefix . '%';
 $sql           = 'DELETE FROM ' . $table . ' WHERE ' . $column . ' LIKE %s';
 $del           = $wpdb->query($wpdb->prepare($sql, $key));
 // 清除超連結目錄中的檔案
-$mxpdev_folder = WP_CONTENT_DIR . '/uploads/MXPDEV/';
+$mxpdev_folder = str_replace('/', DIRECTORY_SEPARATOR, WP_CONTENT_DIR . '/uploads/MXPDEV/');
 if (is_dir($mxpdev_folder)) {
     $folder = opendir($mxpdev_folder);
     while (($file = readdir($folder)) !== false) {

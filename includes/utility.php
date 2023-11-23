@@ -121,10 +121,11 @@ trait Utility {
         }
         // 結束日抓完整的一日來看
         $day_to += DAY_IN_SECONDS;
-        $theme_root      = get_theme_root();
-        $plugin_root     = WP_PLUGIN_DIR;
-        $uploads_root    = wp_get_upload_dir()['basedir'];
-        $all_files_in_WP = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(ABSPATH, \RecursiveDirectoryIterator::SKIP_DOTS));
+        $theme_root      = str_replace('/', DIRECTORY_SEPARATOR, get_theme_root());
+        $plugin_root     = str_replace('/', DIRECTORY_SEPARATOR, WP_PLUGIN_DIR);
+        $uploads_root    = str_replace('/', DIRECTORY_SEPARATOR, wp_get_upload_dir()['basedir']);
+        $abspath         = str_replace('/', DIRECTORY_SEPARATOR, ABSPATH);
+        $all_files_in_WP = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($abspath, \RecursiveDirectoryIterator::SKIP_DOTS));
         foreach ($all_files_in_WP as $key => $file) {
             $entry = $file->getPathname();
             if ($file->isDir()) {
@@ -147,7 +148,8 @@ trait Utility {
                 continue;
             }
             // 判斷是否是核心檔案， WP_CONTENT_DIR 之外的都算
-            if (strpos($entry, WP_CONTENT_DIR) === 0) {
+            $wp_content_dir = str_replace('/', DIRECTORY_SEPARATOR, WP_CONTENT_DIR);
+            if (strpos($entry, $wp_content_dir) === 0) {
                 // 一天內修改的檔案
                 if ($mtime >= $day_from && $mtime <= $day_to) {
                     // 非系統檔案
@@ -167,12 +169,12 @@ trait Utility {
                         continue;
                     }
                     // 其他未分類檔案
-                    $recently_mod_files['uncategorized_files'][] = array('full_path' => $entry, 'relative_path' => str_replace(WP_CONTENT_DIR . DIRECTORY_SEPARATOR, '', $entry), 'name' => $path_parts['basename'], 'mod_time' => $mtime);
+                    $recently_mod_files['uncategorized_files'][] = array('full_path' => $entry, 'relative_path' => str_replace($wp_content_dir . DIRECTORY_SEPARATOR, '', $entry), 'name' => $path_parts['basename'], 'mod_time' => $mtime);
                 }
             } else {
                 // 算系統檔案（預設紀錄一天內修改的檔案）
                 if ($mtime >= $day_from && $mtime <= $day_to) {
-                    $recently_mod_files['core_files'][] = array('full_path' => $entry, 'relative_path' => str_replace(ABSPATH, '', $entry), 'name' => $path_parts['basename'], 'mod_time' => $mtime);
+                    $recently_mod_files['core_files'][] = array('full_path' => $entry, 'relative_path' => str_replace($abspath, '', $entry), 'name' => $path_parts['basename'], 'mod_time' => $mtime);
                     continue;
                 }
             }

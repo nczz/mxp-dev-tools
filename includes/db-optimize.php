@@ -250,7 +250,7 @@ trait DatabaseOptimize {
                 echo json_encode(array('success' => false, 'data' => array(), 'msg' => '清除資料庫中 options 失敗，請再試一次。'));
                 exit;
             }
-            $mxpdev_folder = WP_CONTENT_DIR . str_replace('/', DIRECTORY_SEPARATOR, '/uploads/MXPDEV/');
+            $mxpdev_folder = str_replace('/', DIRECTORY_SEPARATOR, WP_CONTENT_DIR . '/uploads/MXPDEV/');
             // 清除超連結目錄中的檔案
             if (is_dir($mxpdev_folder)) {
                 $folder = opendir($mxpdev_folder);
@@ -433,13 +433,14 @@ trait DatabaseOptimize {
                             $q    = rand(1, 24);
                             $salt = $salt . $letters[$q];
                         }
-                        $new_file_name = $salt . '-' . $dump_file_name;
-                        $mxpdev_folder = str_replace('/', DIRECTORY_SEPARATOR, '/uploads/MXPDEV/');
-                        $download_dir  = WP_CONTENT_DIR . $mxpdev_folder . $new_file_name;
-                        if (!file_exists(WP_CONTENT_DIR . $mxpdev_folder) && !is_dir(WP_CONTENT_DIR . $mxpdev_folder)) {
-                            mkdir(WP_CONTENT_DIR . $mxpdev_folder, 0777, true);
+                        $new_file_name  = $salt . '-' . $dump_file_name;
+                        $mxpdev_folder  = str_replace('/', DIRECTORY_SEPARATOR, '/uploads/MXPDEV/');
+                        $wp_content_dir = str_replace('/', DIRECTORY_SEPARATOR, WP_CONTENT_DIR);
+                        $download_dir   = $wp_content_dir . $mxpdev_folder . $new_file_name;
+                        if (!file_exists($wp_content_dir . $mxpdev_folder) && !is_dir($wp_content_dir . $mxpdev_folder)) {
+                            mkdir($wp_content_dir . $mxpdev_folder, 0777, true);
                         }
-                        $index_file = WP_CONTENT_DIR . $mxpdev_folder . 'index.html';
+                        $index_file = $wp_content_dir . $mxpdev_folder . 'index.html';
                         if (!file_exists($index_file)) {
                             touch($index_file);
                         }
@@ -618,7 +619,8 @@ trait DatabaseOptimize {
                 update_site_option($step_0_option_name, array('success' => false, 'data' => array(), 'msg' => '清除資料庫中 options 失敗，請再試一次。'));
                 exit;
             }
-            $mxpdev_folder = WP_CONTENT_DIR . str_replace('/', DIRECTORY_SEPARATOR, '/uploads/MXPDEV/');
+            $wp_content_dir = str_replace('/', DIRECTORY_SEPARATOR, WP_CONTENT_DIR);
+            $mxpdev_folder  = $wp_content_dir . str_replace('/', DIRECTORY_SEPARATOR, '/uploads/MXPDEV/');
             // 清除超連結目錄中的檔案
             if (is_dir($mxpdev_folder)) {
                 $folder = opendir($mxpdev_folder);
@@ -825,11 +827,12 @@ trait DatabaseOptimize {
                     }
                     $new_file_name  = $salt . '-' . $zip_file_name;
                     $path_to_mxpdev = str_replace('/', DIRECTORY_SEPARATOR, '/uploads/MXPDEV/');
-                    $download_dir   = WP_CONTENT_DIR . $path_to_mxpdev . $new_file_name;
-                    if (!file_exists(WP_CONTENT_DIR . $path_to_mxpdev) && !is_dir(WP_CONTENT_DIR . $path_to_mxpdev)) {
-                        mkdir(WP_CONTENT_DIR . $path_to_mxpdev, 0777, true);
+                    $wp_content_dir = str_replace('/', DIRECTORY_SEPARATOR, WP_CONTENT_DIR);
+                    $download_dir   = $wp_content_dir . $path_to_mxpdev . $new_file_name;
+                    if (!file_exists($wp_content_dir . $path_to_mxpdev) && !is_dir($wp_content_dir . $path_to_mxpdev)) {
+                        mkdir($wp_content_dir . $path_to_mxpdev, 0777, true);
                     }
-                    $index_file = WP_CONTENT_DIR . $path_to_mxpdev . 'index.html';
+                    $index_file = $wp_content_dir . $path_to_mxpdev . 'index.html';
                     if (!file_exists($index_file)) {
                         touch($index_file);
                     }
@@ -965,7 +968,8 @@ trait DatabaseOptimize {
             }
             foreach ($search_op as $option_name) {
                 $in_use_flag     = false;
-                $all_files_in_WP = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(ABSPATH, \RecursiveDirectoryIterator::SKIP_DOTS));
+                $abspath         = str_replace('/', DIRECTORY_SEPARATOR, ABSPATH);
+                $all_files_in_WP = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($abspath, \RecursiveDirectoryIterator::SKIP_DOTS));
                 foreach ($all_files_in_WP as $key => $file) {
                     $entry = $file->getPathname();
                     if ($file->isDir()) {
@@ -1030,7 +1034,7 @@ trait DatabaseOptimize {
         if ($del === false) {
             $errors[] = array('action' => 'DELETE query', 'name' => '');
         }
-        $mxpdev_folder = WP_CONTENT_DIR . str_replace('/', DIRECTORY_SEPARATOR, '/uploads/MXPDEV/');
+        $mxpdev_folder = str_replace('/', DIRECTORY_SEPARATOR, WP_CONTENT_DIR . '/uploads/MXPDEV/');
         if (is_dir($mxpdev_folder)) {
             $folder = opendir($mxpdev_folder);
             while (($file = readdir($folder)) !== false) {

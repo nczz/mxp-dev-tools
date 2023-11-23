@@ -29,10 +29,10 @@ trait PluginsList {
         $path = '';
         switch ($context) {
         case 'mustuse':
-            $path = WPMU_PLUGIN_DIR . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $plugin_file);
+            $path = str_replace('/', DIRECTORY_SEPARATOR, WPMU_PLUGIN_DIR . '/' . $plugin_file);
             break;
         case 'dropins':
-            $path = WP_CONTENT_DIR . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $plugin_file);
+            $path = str_replace('/', DIRECTORY_SEPARATOR, WP_CONTENT_DIR . '/' . $plugin_file);
             break;
         case 'all':
         case 'active':
@@ -42,7 +42,7 @@ trait PluginsList {
         case 'auto-update-disabled':
         case 'upgrade':
         default:
-            $path = WP_PLUGIN_DIR . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $plugin_file);
+            $path = str_replace('/', DIRECTORY_SEPARATOR, WP_PLUGIN_DIR . '/' . $plugin_file);
             break;
         }
         if ($path != '') {

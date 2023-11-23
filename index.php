@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools - Mxp.TW
  * Plugin URI: https://goo.gl/2gLq18
  * Description: 一介資男の常用外掛整理與常用開發功能整合外掛。
- * Version: 2.9.9.3
+ * Version: 2.9.9.4
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -25,7 +25,7 @@ class MxpDevTools {
     use DatabaseOptimize;
     use SearchReplace;
     use Utility;
-    static $VERSION                   = '2.9.9.3';
+    static $VERSION                   = '2.9.9.4';
     private $themeforest_api_base_url = 'https://api.envato.com/v3';
     protected static $instance        = null;
     public $plugin_slug               = 'mxp_wp_dev_tools';
@@ -472,22 +472,27 @@ class MxpDevTools {
                 echo '</br>';
                 echo $table2;
                 echo '</br>';
-                $mxp_download_wp_content_with_uploads    = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'index.php') . '&type=folder&context=wp-content');
-                $mxp_download_wp_content_with_uploads    = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'index.php')), $mxp_download_wp_content_with_uploads);
-                $mxp_download_wp_content_without_uploads = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'index.php') . '&type=folder&context=wp-content&exclude_path=' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR));
-                $mxp_download_wp_content_without_uploads = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'index.php')), $mxp_download_wp_content_without_uploads);
+                $wp_content_dir                          = str_replace('/', DIRECTORY_SEPARATOR, WP_CONTENT_DIR . '/' . 'index.php');
+                $wp_content_upload_dir                   = str_replace('/', DIRECTORY_SEPARATOR, WP_CONTENT_DIR . '/uploads/');
+                $wp_mu_plugins_dir                       = str_replace('/', DIRECTORY_SEPARATOR, WP_CONTENT_DIR . '/mu-plugins/index.php');
+                $mxp_download_wp_content_with_uploads    = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode($wp_content_dir) . '&type=folder&context=wp-content');
+                $mxp_download_wp_content_with_uploads    = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode($wp_content_dir)), $mxp_download_wp_content_with_uploads);
+                $mxp_download_wp_content_without_uploads = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode($wp_content_dir) . '&type=folder&context=wp-content&exclude_path=' . base64_encode($wp_content_upload_dir));
+                $mxp_download_wp_content_without_uploads = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode($wp_content_dir)), $mxp_download_wp_content_without_uploads);
 
-                $mxp_download_mu_plugins = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'mu-plugins' . DIRECTORY_SEPARATOR . 'index.php') . '&type=folder&context=mu-plugins');
-                $mxp_download_mu_plugins = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'mu-plugins' . DIRECTORY_SEPARATOR . 'index.php')), $mxp_download_mu_plugins);
+                $mxp_download_mu_plugins = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode($wp_mu_plugins_dir) . '&type=folder&context=mu-plugins');
+                $mxp_download_mu_plugins = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode($wp_mu_plugins_dir)), $mxp_download_mu_plugins);
                 $check_mu_plugins        = '';
-                if (!file_exists(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'mu-plugins' . DIRECTORY_SEPARATOR)) {
+                $mu_plugins_dir          = str_replace('/', DIRECTORY_SEPARATOR, WP_CONTENT_DIR . '/mu-plugins/');
+                if (!file_exists($mu_plugins_dir)) {
                     $check_mu_plugins        = 'disabled';
                     $mxp_download_mu_plugins = '#';
                 }
-                $mxp_download_wp_config = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode(ABSPATH . 'wp-config.php') . '&type=file&context=wp-config');
-                $mxp_download_wp_config = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode(ABSPATH . 'wp-config.php')), $mxp_download_wp_config);
+                $abspath                = str_replace('/', DIRECTORY_SEPARATOR, ABSPATH);
+                $mxp_download_wp_config = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode($abspath . 'wp-config.php') . '&type=file&context=wp-config');
+                $mxp_download_wp_config = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode($abspath . 'wp-config.php')), $mxp_download_wp_config);
 
-                $download_link = '<button type="button" class="button pack_wp_content" data-path="' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'index.php') . '" data-nonce="' . wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'index.php')) . '" data-exclude_path="" >打包 wp-content 目錄（包含 uploads）</button> | <button type="button" class="button pack_wp_content" data-path="' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'index.php') . '" data-nonce="' . wp_create_nonce('mxp-download-current-plugins-' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'index.php')) . '" data-exclude_path="' . base64_encode(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR) . '">打包 wp-content 目錄（不含 uploads）</button> | <button type="button" class="button cleanup_mxpdev">清除外掛暫存目錄與設定</button> | <a href="' . $mxp_download_mu_plugins . '" ' . $check_mu_plugins . ' class="button ">打包 mu-plugins 目錄</a> | <a href="' . $mxp_download_wp_config . '" class="button ">打包 wp-config.php 檔案</a>';
+                $download_link = '<button type="button" class="button pack_wp_content" data-path="' . base64_encode($wp_content_dir) . '" data-nonce="' . wp_create_nonce('mxp-download-current-plugins-' . base64_encode($wp_content_dir)) . '" data-exclude_path="" >打包 wp-content 目錄（包含 uploads）</button> | <button type="button" class="button pack_wp_content" data-path="' . base64_encode($wp_content_dir) . '" data-nonce="' . wp_create_nonce('mxp-download-current-plugins-' . base64_encode($wp_content_dir)) . '" data-exclude_path="' . base64_encode($wp_content_upload_dir) . '">打包 wp-content 目錄（不含 uploads）</button> | <button type="button" class="button cleanup_mxpdev">清除外掛暫存目錄與設定</button> | <a href="' . $mxp_download_mu_plugins . '" ' . $check_mu_plugins . ' class="button ">打包 mu-plugins 目錄</a> | <a href="' . $mxp_download_wp_config . '" class="button ">打包 wp-config.php 檔案</a>';
                 echo $download_link;
             }
         });
@@ -662,7 +667,7 @@ class MxpDevTools {
                 } else {
                     $child_theme = '無';
                 }
-                $path                     = $theme_info->get_stylesheet_directory() . DIRECTORY_SEPARATOR . 'style.css';
+                $path                     = str_replace('/', DIRECTORY_SEPARATOR, $theme_info->get_stylesheet_directory() . '/style.css');
                 $type                     = 'folder';
                 $context                  = 'themes';
                 $mxp_download_action_link = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode($path) . '&type=' . $type . '&context=' . $context);

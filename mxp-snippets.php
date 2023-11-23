@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Snippets - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 整合 GitHub 中常用的程式碼片段。請注意，並非所有網站都適用全部的選項，有進階需求可以透過設定 wp-config.php 中此外掛預設常數，啟用或停用部分功能。
- * Version: 2.9.9.3
+ * Version: 2.9.9.4
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -659,11 +659,12 @@ jQuery(document).ready(function(){
         //         }
         //     }
         // }
-        if (file_exists(ABSPATH . 'xmlrpc.php') && MDT_DELETE_XMLRPC_PHP) {
-            unlink(ABSPATH . 'xmlrpc.php');
+        $abspath = str_replace('/', DIRECTORY_SEPARATOR, ABSPATH);
+        if (file_exists($abspath . 'xmlrpc.php') && MDT_DELETE_XMLRPC_PHP) {
+            unlink($abspath . 'xmlrpc.php');
         }
-        if (file_exists(ABSPATH . 'wp-admin/install.php') && MDT_DELETE_INSTALL_PHP) {
-            unlink(ABSPATH . 'wp-admin/install.php');
+        if (file_exists($abspath . 'wp-admin' . DIRECTORY_SEPARATOR . 'install.php') && MDT_DELETE_INSTALL_PHP) {
+            unlink($abspath . 'wp-admin' . DIRECTORY_SEPARATOR . 'install.php');
         }
     }
     // 遮蔽所有留言中留言人提供的網址提供的網址

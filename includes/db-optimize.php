@@ -643,6 +643,7 @@ trait DatabaseOptimize {
                 update_site_option($step_0_option_name, array('success' => false, 'data' => array(), 'msg' => 'ZIP壓縮程式執行錯誤'));
                 exit;
             }
+            $zip->addFromString('readme.txt', 'Created by Chun. https://tw.wordpress.org/plugins/mxp-dev-tools/');
             $zip->close();
             // error_log('total_file_count:' . $total_file_count);
             $split_num   = 500;
@@ -700,6 +701,9 @@ trait DatabaseOptimize {
                                 'file_paths'    => $batch_array,
                                 'status'        => 'addfile',
                             );
+                            $key        = $option_prefix . $zip_file_name . '_%';
+                            $sql        = 'SELECT count(*) FROM ' . $table . ' WHERE ' . $column . ' LIKE %s';
+                            $save_times = $wpdb->get_var($wpdb->prepare($sql, $key));
                             update_site_option($option_prefix . $zip_file_name . '_' . $save_times, $item);
                             $option_keys[] = $option_prefix . $zip_file_name . '_' . $save_times;
                             $save_times += 1;
@@ -719,6 +723,9 @@ trait DatabaseOptimize {
                     'file_paths'    => $batch_array,
                     'status'        => 'addfile',
                 );
+                $key        = $option_prefix . $zip_file_name . '_%';
+                $sql        = 'SELECT count(*) FROM ' . $table . ' WHERE ' . $column . ' LIKE %s';
+                $save_times = $wpdb->get_var($wpdb->prepare($sql, $key));
                 update_site_option($option_prefix . $zip_file_name . '_' . $save_times, $item);
                 $option_keys[] = $option_prefix . $zip_file_name . '_' . $save_times;
             }

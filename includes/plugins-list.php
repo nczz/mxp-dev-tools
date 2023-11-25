@@ -293,15 +293,17 @@ trait PluginsList {
                     }
                     $zip_relative_path = str_replace($relative_path . DIRECTORY_SEPARATOR, '', $file_path);
                     if ($add_flag) {
-                        $zip->addFile($file_path, $zip_relative_path);
+                        $zip->addFile($file_path, str_replace(DIRECTORY_SEPARATOR, '/', $zip_relative_path));
                     }
                 }
             }
         }
         $zip->close();
         if ($zip_file_path != '' && file_exists($zip_file_path)) {
+            ob_clean();
             header('Content-Description: File Transfer');
-            header('Content-Type: application/octet-stream');
+            // header('Content-Type: application/octet-stream');
+            header('Content-type: application/zip');
             header('Content-Disposition: attachment; filename="' . $zip_file_name . '"');
             header('Expires: 0');
             header('Cache-Control: no-cache');
@@ -309,7 +311,8 @@ trait PluginsList {
             header('Content-Length: ' . filesize($zip_file_path));
             header('Set-Cookie:fileLoading=true');
             header("Pragma: no-cache");
-            readfile($zip_file_path);
+            // readfile($zip_file_path);
+            echo file_get_contents($zip_file_path);
             unlink($zip_file_path);
             exit;
         }

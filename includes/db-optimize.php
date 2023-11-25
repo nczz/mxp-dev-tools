@@ -167,16 +167,18 @@ trait DatabaseOptimize {
             $zip_file_path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $zip_file_name;
             $zip->open($zip_file_path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
             if ($zip) {
-                $zip->addFile($sql_full_path, $sql_name);
+                $zip->addFile($sql_full_path, $export_database . '-' . $export_table . "/" . $sql_name);
                 // Ref: https://www.php.net/manual/en/zip.constants.php
                 // if (method_exists($zip, 'setCompressionIndex')) {
                 //     $zip->setCompressionName($sql_name, ZipArchive::CM_DEFLATE);
                 // }
                 $zip->close();
             }
+            ob_clean();
             if (file_exists($zip_file_path)) {
                 header('Content-Description: File Transfer');
-                header('Content-Type: application/octet-stream');
+                // header('Content-Type: application/octet-stream');
+                header('Content-type: application/zip');
                 header('Content-Disposition: attachment; filename="' . $zip_file_name . '"');
                 header('Expires: 0');
                 header('Cache-Control: no-cache');
@@ -184,7 +186,8 @@ trait DatabaseOptimize {
                 header('Content-Length: ' . filesize($zip_file_path));
                 header('Set-Cookie:fileLoading=true');
                 header("Pragma: no-cache");
-                readfile($zip_file_path);
+                // readfile($zip_file_path);
+                echo file_get_contents($zip_file_path);
                 unlink($zip_file_path);
                 unlink($sql_full_path);
                 exit;
@@ -198,7 +201,8 @@ trait DatabaseOptimize {
                 header('Content-Length: ' . filesize($sql_full_path));
                 header('Set-Cookie:fileLoading=true');
                 header("Pragma: no-cache");
-                readfile($sql_full_path);
+                // readfile($sql_full_path);
+                echo file_get_contents($sql_full_path);
                 unlink($sql_full_path);
                 exit;
             }
@@ -646,7 +650,7 @@ trait DatabaseOptimize {
             $zip->addFromString('readme.txt', 'Created by Chun. https://tw.wordpress.org/plugins/mxp-dev-tools/');
             $zip->close();
             // error_log('total_file_count:' . $total_file_count);
-            $split_num   = 500;
+            $split_num   = 100;
             $save_times  = 0;
             $option_keys = [];
             $add_flag    = true;
@@ -708,6 +712,7 @@ trait DatabaseOptimize {
                             $option_keys[] = $option_prefix . $zip_file_name . '_' . $save_times;
                             $save_times += 1;
                             $batch_array = []; //清空
+                            usleep(600);
                         }
                     }
                 }
@@ -728,6 +733,7 @@ trait DatabaseOptimize {
                 $save_times = $wpdb->get_var($wpdb->prepare($sql, $key));
                 update_site_option($option_prefix . $zip_file_name . '_' . $save_times, $item);
                 $option_keys[] = $option_prefix . $zip_file_name . '_' . $save_times;
+                usleep(600);
             }
             // echo json_encode(array(
             //     'success' => true,
@@ -774,7 +780,7 @@ trait DatabaseOptimize {
                 exit;
             }
             $item = get_site_option($option_key, '');
-            if ($item == '') {
+            if ($item === '') {
                 echo json_encode(array('success' => false, 'data' => array(), 'msg' => '傳入資料有誤，請再次確認！'));
                 exit;
             }
@@ -785,7 +791,7 @@ trait DatabaseOptimize {
                 $fileToAdd = $file_path[0];
                 $fileInfo  = $zip->statName($file_path[0]);
                 if (!$fileInfo) {
-                    $zip->addFile($file_path[0], $file_path[1]);
+                    $zip->addFile($file_path[0], str_replace(DIRECTORY_SEPARATOR, '/', $file_path[1]));
                     // error_log('File Order: ' . $file_path[2]);
                 }
             }

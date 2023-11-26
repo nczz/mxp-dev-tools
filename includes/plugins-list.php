@@ -174,6 +174,7 @@ trait PluginsList {
         }
         wp_send_json_success($status);
     }
+
     public function mxp_ajax_activate_plugin() {
         $nonce = sanitize_text_field(isset($_POST['nonce']) == true ? $_POST['nonce'] : "");
         if (!wp_verify_nonce($nonce, 'mxp-ajax-nonce-for-plugin-list') && !wp_verify_nonce($nonce, 'mxp-ajax-nonce-for-themeforest-list')) {
@@ -191,6 +192,7 @@ trait PluginsList {
             wp_send_json_error(array('activated' => false));
         }
     }
+
     public function mxp_ajax_install_theme() {
         if (!wp_is_file_mod_allowed('mxp_ajax_install_theme')) {
             wp_send_json_error(array('status' => false, 'data' => array('msg' => '系統禁止檔案操作')));

@@ -218,15 +218,15 @@ trait DatabaseOptimize {
     public function mxp_ajax_mysqldump_large() {
         $step = sanitize_text_field($_REQUEST['step']);
         if (empty($step)) {
-            echo json_encode(array('success' => false, 'data' => array(), 'msg' => '缺少 step 階段的參數'));
+            wp_send_json(array('success' => false, 'data' => array(), 'msg' => '缺少 step 階段的參數'));
             exit;
         }
         if (!isset($_REQUEST['database']) || $_REQUEST['database'] == '') {
-            echo json_encode(array('success' => false, 'data' => array(), 'msg' => '沒指定匯出的資料庫！'));
+            wp_send_json(array('success' => false, 'data' => array(), 'msg' => '沒指定匯出的資料庫！'));
             exit;
         }
         if (!isset($_REQUEST['nonce']) || !wp_verify_nonce($_REQUEST['nonce'], 'mxp-ajax-nonce-for-db-optimize')) {
-            echo json_encode(array('success' => false, 'data' => array(), 'msg' => '驗證請求失敗，請再試一次。'));
+            wp_send_json(array('success' => false, 'data' => array(), 'msg' => '驗證請求失敗，請再試一次。'));
             exit;
         }
         //準備資料表資訊
@@ -255,7 +255,7 @@ trait DatabaseOptimize {
             $sql = 'DELETE FROM ' . $table . ' WHERE ' . $column . ' LIKE %s';
             $del = $wpdb->query($wpdb->prepare($sql, $key));
             if ($del === false) {
-                echo json_encode(array('success' => false, 'data' => array(), 'msg' => '清除資料庫中 options 失敗，請再試一次。'));
+                wp_send_json(array('success' => false, 'data' => array(), 'msg' => '清除資料庫中 options 失敗，請再試一次。'));
                 exit;
             }
             $mxpdev_folder = str_replace('/', DIRECTORY_SEPARATOR, WP_CONTENT_DIR . '/uploads/MXPDEV/');
@@ -403,27 +403,27 @@ trait DatabaseOptimize {
         //檢查是否匯出打包完成
         if ($step == 2) {
             if (!isset($_REQUEST['dump_file_name']) || $_REQUEST['dump_file_name'] == '' || !isset($_REQUEST['dump_file_path']) || $_REQUEST['dump_file_path'] == '') {
-                echo json_encode(array('success' => false, 'data' => array(), 'msg' => '缺少 step2 階段的打包檔案參數'));
+                wp_send_json(array('success' => false, 'data' => array(), 'msg' => '缺少 step2 階段的打包檔案參數'));
                 exit;
             }
             $dump_file_name = sanitize_text_field($_REQUEST['dump_file_name']);
             $dump_file_path = sanitize_text_field($_REQUEST['dump_file_path']);
             $check          = get_site_option($option_prefix . $dump_file_name, '');
             if ($check === '') {
-                echo json_encode(array('success' => false, 'data' => array('dump_file_name' => $dump_file_name, 'dump_file_path' => $dump_file_path), 'msg' => '錯誤階段，尚未開始匯出打包作業。'));
+                wp_send_json(array('success' => false, 'data' => array('dump_file_name' => $dump_file_name, 'dump_file_path' => $dump_file_path), 'msg' => '錯誤階段，尚未開始匯出打包作業。'));
                 exit;
             }
             if (!isset($check['status']) || $check['status'] == '') {
-                echo json_encode(array('success' => false, 'data' => array('dump_file_name' => $dump_file_name, 'dump_file_path' => $dump_file_path), 'msg' => '狀態資料格式錯誤'));
+                wp_send_json(array('success' => false, 'data' => array('dump_file_name' => $dump_file_name, 'dump_file_path' => $dump_file_path), 'msg' => '狀態資料格式錯誤'));
                 exit;
             }
             switch ($check['status']) {
             case 'start':
-                echo json_encode(array('success' => false, 'data' => array('progress' => $check['progress'], 'dump_file_name' => $dump_file_name, 'dump_file_path' => $dump_file_path), 'msg' => '初始化作業中'));
+                wp_send_json(array('success' => false, 'data' => array('progress' => $check['progress'], 'dump_file_name' => $dump_file_name, 'dump_file_path' => $dump_file_path), 'msg' => '初始化作業中'));
                 exit;
                 break;
             case 'progress':
-                echo json_encode(array('success' => false, 'data' => array('progress' => $check['progress'], 'dump_file_name' => $dump_file_name, 'dump_file_path' => $dump_file_path), 'msg' => '匯出作業中'));
+                wp_send_json(array('success' => false, 'data' => array('progress' => $check['progress'], 'dump_file_name' => $dump_file_name, 'dump_file_path' => $dump_file_path), 'msg' => '匯出作業中'));
                 exit;
                 break;
             case 'done':
@@ -463,48 +463,48 @@ trait DatabaseOptimize {
                             if (function_exists('symlink')) {
                                 symlink($dump_file_path, $download_dir);
                             } else {
-                                echo json_encode(array('success' => false, 'data' => array(), 'msg' => '請聯絡網站伺服器管理員開放 symlink 或 rename 至少其中一個方法。'));
+                                wp_send_json(array('success' => false, 'data' => array(), 'msg' => '請聯絡網站伺服器管理員開放 symlink 或 rename 至少其中一個方法。'));
                                 exit;
                             }
                         }
                         $upload_dir    = wp_upload_dir();
                         $download_link = $upload_dir['baseurl'] . "/MXPDEV/" . $new_file_name;
-                        echo json_encode(array('success' => true, 'data' => array('download_link' => $download_link, 'filesize' => $filesize), 'msg' => '下載檔案中'));
+                        wp_send_json(array('success' => true, 'data' => array('download_link' => $download_link, 'filesize' => $filesize), 'msg' => '下載檔案中'));
                         exit;
                     } else {
-                        echo json_encode(array('success' => false, 'data' => array(), 'msg' => '檔案不存在'));
+                        wp_send_json(array('success' => false, 'data' => array(), 'msg' => '檔案不存在'));
                         exit;
                     }
                 } else {
-                    echo json_encode(array('success' => false, 'data' => array(), 'msg' => '刪除 options 失敗！'));
+                    wp_send_json(array('success' => false, 'data' => array(), 'msg' => '刪除 options 失敗！'));
                     exit;
                 }
-                echo json_encode(array('success' => false, 'data' => array(), 'msg' => '完全不知道失敗在哪的錯誤！？'));
+                wp_send_json(array('success' => false, 'data' => array(), 'msg' => '完全不知道失敗在哪的錯誤！？'));
                 exit;
                 break;
             case 'error':
-                echo json_encode(array('success' => false, 'data' => array('progress' => $check['progress'], 'dump_file_name' => $dump_file_name, 'dump_file_path' => $dump_file_path), 'msg' => '發生錯誤，匯出作業中斷'));
+                wp_send_json(array('success' => false, 'data' => array('progress' => $check['progress'], 'dump_file_name' => $dump_file_name, 'dump_file_path' => $dump_file_path), 'msg' => '發生錯誤，匯出作業中斷'));
                 exit;
                 break;
             default:
-                echo json_encode(array('success' => false, 'data' => array('progress' => $check['progress'], 'dump_file_name' => $dump_file_name, 'dump_file_path' => $dump_file_path), 'msg' => '未知的處理狀態'));
+                wp_send_json(array('success' => false, 'data' => array('progress' => $check['progress'], 'dump_file_name' => $dump_file_name, 'dump_file_path' => $dump_file_path), 'msg' => '未知的處理狀態'));
                 exit;
                 break;
             }
         }
         // 沒有第三階段了！！
-        echo json_encode(array('success' => false, 'data' => array(), 'msg' => '沒有這一步喔！'));
+        wp_send_json(array('success' => false, 'data' => array(), 'msg' => '沒有這一步喔！'));
         exit;
     }
 
     public function mxp_ajax_background_pack_action() {
         if (!is_super_admin()) {
-            echo json_encode(array('success' => false, 'data' => array(), 'msg' => '此功能僅限網站最高權限管理人員使用！'));
+            wp_send_json(array('success' => false, 'data' => array(), 'msg' => '此功能僅限網站最高權限管理人員使用！'));
             exit;
         }
         $step = sanitize_text_field($_REQUEST['step']);
         if ($step == '') {
-            echo json_encode(array('success' => false, 'data' => array(), 'msg' => '缺少 step 階段的參數'));
+            wp_send_json(array('success' => false, 'data' => array(), 'msg' => '缺少 step 階段的參數'));
             exit;
         }
         $path         = sanitize_text_field($_REQUEST['path']);
@@ -513,18 +513,18 @@ trait DatabaseOptimize {
         $exclude_path = sanitize_text_field($_REQUEST['exclude_path']);
         //僅接受資料夾格式的打包
         if (empty($path) || empty($type) || !in_array($type, array('folder'), true) || empty($context) || !wp_verify_nonce($_REQUEST['nonce'], 'mxp-download-current-plugins-' . $path)) {
-            echo json_encode(array('success' => false, 'data' => array(), 'msg' => '驗證請求失敗，請再試一次。'));
+            wp_send_json(array('success' => false, 'data' => array(), 'msg' => '驗證請求失敗，請再試一次。'));
             exit;
         }
         $path = base64_decode($path, true);
         if ($path == false) {
-            echo json_encode(array('success' => false, 'data' => array(), 'msg' => '路徑驗證請求失敗，請再試一次。'));
+            wp_send_json(array('success' => false, 'data' => array(), 'msg' => '路徑驗證請求失敗，請再試一次。'));
             exit;
         }
         if (!empty($exclude_path)) {
             $exclude_path = base64_decode($exclude_path, true);
             if ($exclude_path == false) {
-                echo json_encode(array('success' => false, 'data' => array(), 'msg' => '排除路徑驗證請求失敗，請再試一次。'));
+                wp_send_json(array('success' => false, 'data' => array(), 'msg' => '排除路徑驗證請求失敗，請再試一次。'));
                 exit;
             }
         }
@@ -763,12 +763,12 @@ trait DatabaseOptimize {
                     ),
                     'msg'     => '打包準備中...',
                 );
-                echo json_encode($resp);
+                wp_send_json($resp);
                 exit;
             } else {
                 $status = $data['data']['status'];
                 if ($status !== 'done') {
-                    echo json_encode($data);
+                    wp_send_json($data);
                     exit;
                 }
                 $zip_file_path = $data['data']['zip_file_path'];
@@ -807,20 +807,20 @@ trait DatabaseOptimize {
                             if (function_exists('symlink')) {
                                 symlink($zip_file_path, $download_dir);
                             } else {
-                                echo json_encode(array('success' => false, 'data' => array(), 'msg' => '請聯絡網站伺服器管理員開放 symlink 或 rename 至少其中一個方法。'));
+                                wp_send_json(array('success' => false, 'data' => array(), 'msg' => '請聯絡網站伺服器管理員開放 symlink 或 rename 至少其中一個方法。'));
                                 exit;
                             }
                         }
                         $upload_dir    = wp_upload_dir();
                         $download_link = $upload_dir['baseurl'] . "/MXPDEV/" . $new_file_name;
-                        echo json_encode(array('success' => true, 'data' => array('download_link' => $download_link, 'filesize' => $filesize, 'status' => 'download'), 'msg' => '下載檔案中'));
+                        wp_send_json(array('success' => true, 'data' => array('download_link' => $download_link, 'filesize' => $filesize, 'status' => 'download'), 'msg' => '下載檔案中'));
                         exit;
                     } else {
-                        echo json_encode(array('success' => false, 'data' => array(), 'msg' => '檔案不存在'));
+                        wp_send_json(array('success' => false, 'data' => array(), 'msg' => '檔案不存在'));
                         exit;
                     }
                 } else {
-                    echo json_encode(array('success' => false, 'data' => array(), 'msg' => '刪除 options 失敗！'));
+                    wp_send_json(array('success' => false, 'data' => array(), 'msg' => '刪除 options 失敗！'));
                     exit;
                 }
             }
@@ -1035,9 +1035,9 @@ trait DatabaseOptimize {
             }
         }
         if (count($errors) == 0) {
-            echo json_encode(array('success' => true, 'data' => array(), 'msg' => '清除完成！'));
+            wp_send_json(array('success' => true, 'data' => array(), 'msg' => '清除完成！'));
         } else {
-            echo json_encode(array('success' => false, 'data' => $errors, 'msg' => '請求異常'));
+            wp_send_json(array('success' => false, 'data' => $errors, 'msg' => '請求異常'));
         }
         exit;
     }

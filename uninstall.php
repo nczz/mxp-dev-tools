@@ -28,6 +28,10 @@ $option_prefix = 'mxp_dev_mysqldump_file_';
 $key           = $option_prefix . '%';
 $sql           = 'DELETE FROM ' . $table . ' WHERE ' . $column . ' LIKE %s';
 $del           = $wpdb->query($wpdb->prepare($sql, $key));
+$option_prefix = 'mxp_dev_packfile_step0';
+$key           = $option_prefix . '%';
+$sql           = 'DELETE FROM ' . $table . ' WHERE ' . $column . ' LIKE %s';
+$del           = $wpdb->query($wpdb->prepare($sql, $key));
 // 清除超連結目錄中的檔案
 $mxpdev_folder = str_replace('/', DIRECTORY_SEPARATOR, WP_CONTENT_DIR . '/uploads/MXPDEV/');
 if (is_dir($mxpdev_folder)) {

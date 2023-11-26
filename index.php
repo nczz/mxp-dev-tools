@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools - Mxp.TW
  * Plugin URI: https://goo.gl/2gLq18
  * Description: 一介資男の常用外掛整理與常用開發功能整合外掛。
- * Version: 2.9.9.6
+ * Version: 2.9.9.7
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -25,7 +25,7 @@ class MxpDevTools {
     use DatabaseOptimize;
     use SearchReplace;
     use Utility;
-    static $VERSION                   = '2.9.9.6';
+    static $VERSION                   = '2.9.9.7';
     private $themeforest_api_base_url = 'https://api.envato.com/v3';
     protected static $instance        = null;
     public $plugin_slug               = 'mxp_wp_dev_tools';
@@ -354,8 +354,9 @@ class MxpDevTools {
                 $key_column   = 'meta_id';
                 $value_column = 'meta_value';
             }
-            $option_prefix = 'mxp_dev_zipfile_';
-            $key           = $option_prefix . '%';
+            $option_prefix      = 'mxp_dev_zipfile_';
+            $step_0_option_name = 'mxp_dev_packfile_step0';
+            $key                = $option_prefix . '%';
 
             $sql = '
             SELECT COUNT(*)
@@ -373,11 +374,19 @@ class MxpDevTools {
             ORDER BY ' . $key_column . ' ASC
             ';
             $total_mysqldump_count = $wpdb->get_results($wpdb->prepare($sql, $key), ARRAY_A);
+            $key                   = $step_0_option_name . '%';
+            $sql                   = '
+            SELECT COUNT(*)
+            FROM ' . $table . '
+            WHERE ' . $column . ' LIKE %s
+            ORDER BY ' . $key_column . ' ASC
+            ';
+            $total_packing_count = $wpdb->get_var($wpdb->prepare($sql, $key));
 
             wp_localize_script($this->plugin_slug . '-db-optimize', 'MXP', array(
                 'ajaxurl'            => admin_url('admin-ajax.php'),
                 'nonce'              => wp_create_nonce('mxp-ajax-nonce-for-db-optimize'),
-                'background_process' => $total_batch_count,
+                'background_process' => $total_packing_count,
                 'mysqldump_process'  => $total_mysqldump_count,
             ));
             wp_enqueue_script($this->plugin_slug . '-db-optimize');

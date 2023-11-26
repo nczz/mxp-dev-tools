@@ -421,99 +421,36 @@
                     },
                     success: function(res) {
                         if (res.success) {
-                            console.log('success', res.msg);
-                            wait_lock += 1;
-                            batch_list = res.data['option_keys'];
-                            console.log(batch_list);
-                            zip_file_name = res.data['zip_file_name'];
-                            zip_file_path = res.data['zip_file_path'];
-                            $(self).text('準備就緒，點此開始打包檔案');
-                            $(self).prop('disabled', false);
-                            $(self).trigger('click');
+                            wait_lock += 1; //離開當前這步驟狀態
+                            if (res.data.status == 'download') {
+                                $(self).text('下載中！( ' + res.data['filesize'] + ' MB)');
+                                location.href = res.data['download_link'];
+                            } else {
+                                $(self).text(res.msg);
+                            }
+                            // $(self).prop('disabled', false);
+                            // $(self).trigger('click');
                         } else {
                             console.log('error', res);
-                            $(self).text(res.msg);
                             $(self).prop('disabled', false);
                             $(self).trigger('click');
+                            if (res.data.status == 'addfile') {
+                                var files = res.data.file_paths === undefined ? [] : res.data.file_paths;
+                                for (var i = files.length - 1; i >= 0; i--) {
+                                    var item = files[i][1] === undefined ? '...' : files[i][1];
+                                    console.log('打包中', item);
+                                    $(self).text('打包檔案(' + item + ')');
+                                }
+                            } else if (res.data.status == 'finish') {
+                                $(self).text('準備下載連結中...');
+                            } else {
+                                $(self).text(res.msg);
+                            }
                         }
                     },
                     data: {
                         'action': 'mxp_background_pack',
                         'step': 1,
-                        'nonce': $(this).data('nonce'),
-                        'path': $(this).data('path'),
-                        'type': 'folder',
-                        'context': 'wp-content',
-                        'exclude_path': $(this).data('exclude_path')
-                    }
-                };
-                $.ajaxQueue.addRequest(ajax_options);
-            }
-            if (wait_lock == 2) {
-                for (var i = 0; i < batch_list.length; i++) {
-                    if (batch_list[i]) {
-                        option_key = batch_list[i];
-                    }
-                    var ajax_options = {
-                        method: "POST",
-                        dataType: "json",
-                        url: MXP.ajaxurl,
-                        cache: false,
-                        error: function(res) {
-                            console.log('Error', res);
-                        },
-                        success: function(res) {
-                            if (res.success) {
-                                console.log('success', res.msg);
-                                if (res.data[0] == res.data[1]) {
-                                    $(self).prop('disabled', false);
-                                    $(self).text('點此下載檔案');
-                                    wait_lock += 1;
-                                    $(self).trigger('click');
-                                } else {
-                                    $(self).prop('disabled', true);
-                                    $(self).text('壓縮進度：' + Math.round((res.data[0] / res.data[1]) * 100) + '% （請勿關閉此頁面）');
-                                }
-                            } else {
-                                console.log('success', res);
-                                $(self).text(res.msg);
-                            }
-                        },
-                        data: {
-                            'action': 'mxp_background_pack',
-                            'step': 2,
-                            'zip_file_name': zip_file_name,
-                            'zip_file_path': zip_file_path,
-                            'option_key': option_key,
-                            'nonce': $(this).data('nonce'),
-                            'path': $(this).data('path'),
-                            'type': 'folder',
-                            'context': 'wp-content',
-                            'exclude_path': $(this).data('exclude_path')
-                        }
-                    };
-                    $.ajaxQueue.addRequest(ajax_options);
-                }
-            }
-            if (wait_lock == 3) {
-                var ajax_options = {
-                    method: "POST",
-                    dataType: "json",
-                    url: MXP.ajaxurl,
-                    cache: false,
-                    error: function(res) {
-                        console.log('Error', res);
-                    },
-                    success: function(res) {
-                        console.log('Success', res);
-                        $(self).text('下載中！( ' + res.data['filesize'] + ' MB)');
-                        location.href = res.data['download_link'];
-                    },
-                    data: {
-                        'action': 'mxp_background_pack',
-                        'step': 3,
-                        'zip_file_name': zip_file_name,
-                        'zip_file_path': zip_file_path,
                         'nonce': $(this).data('nonce'),
                         'path': $(this).data('path'),
                         'type': 'folder',

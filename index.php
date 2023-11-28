@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools - Mxp.TW
  * Plugin URI: https://goo.gl/2gLq18
  * Description: 一介資男の常用外掛整理與常用開發功能整合外掛。
- * Version: 2.9.9.8
+ * Version: 2.9.9.10
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -25,7 +25,7 @@ class MxpDevTools {
     use DatabaseOptimize;
     use SearchReplace;
     use Utility;
-    static $VERSION                   = '2.9.9.8';
+    static $VERSION                   = '2.9.9.10';
     private $themeforest_api_base_url = 'https://api.envato.com/v3';
     protected static $instance        = null;
     public $plugin_slug               = 'mxp_wp_dev_tools';
@@ -497,9 +497,16 @@ class MxpDevTools {
                     $check_mu_plugins        = 'disabled';
                     $mxp_download_mu_plugins = '#';
                 }
-                $abspath                = str_replace('/', DIRECTORY_SEPARATOR, ABSPATH);
-                $mxp_download_wp_config = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode($abspath . 'wp-config.php') . '&type=file&context=wp-config');
-                $mxp_download_wp_config = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode($abspath . 'wp-config.php')), $mxp_download_wp_config);
+                $abspath            = str_replace('/', DIRECTORY_SEPARATOR, ABSPATH);
+                $wp_config_dir_path = $abspath . 'wp-config.php';
+                if (!file_exists($wp_config_dir_path)) {
+                    $file = $this->get_filename_dir_path('wp-config.php');
+                    if (count($file) > 0) {
+                        $wp_config_dir_path = $file[0];
+                    }
+                }
+                $mxp_download_wp_config = admin_url('admin-ajax.php?action=mxp_current_plugin_download&path=' . base64_encode($wp_config_dir_path) . '&type=file&context=wp-config');
+                $mxp_download_wp_config = add_query_arg('_wpnonce', wp_create_nonce('mxp-download-current-plugins-' . base64_encode($wp_config_dir_path)), $mxp_download_wp_config);
 
                 $download_link = '<button type="button" class="button pack_wp_content" data-path="' . base64_encode($wp_content_dir) . '" data-nonce="' . wp_create_nonce('mxp-download-current-plugins-' . base64_encode($wp_content_dir)) . '" data-exclude_path="" >打包 wp-content 目錄（包含 uploads）</button> | <button type="button" class="button pack_wp_content" data-path="' . base64_encode($wp_content_dir) . '" data-nonce="' . wp_create_nonce('mxp-download-current-plugins-' . base64_encode($wp_content_dir)) . '" data-exclude_path="' . base64_encode($wp_content_upload_dir) . '">打包 wp-content 目錄（不含 uploads）</button> | <button type="button" class="button cleanup_mxpdev">清除外掛暫存目錄與設定</button> | <a href="' . $mxp_download_mu_plugins . '" ' . $check_mu_plugins . ' class="button ">打包 mu-plugins 目錄</a> | <a href="' . $mxp_download_wp_config . '" class="button ">打包 wp-config.php 檔案</a>';
                 echo $download_link;
@@ -624,7 +631,18 @@ class MxpDevTools {
                 echo "請求異常: " . $error_message . "<br>" . PHP_EOL;
             }
             echo '<hr></br>';
-            $this->show_highlight_string(file_get_contents(ABSPATH . 'wp-config.php'));
+            $wp_config          = '';
+            $wp_config_dir_path = '';
+            $file               = $this->get_filename_dir_path('wp-config.php');
+            if (count($file) > 0) {
+                $wp_config          = file_get_contents($file[0]);
+                $wp_config_dir_path = $file[0];
+            } else {
+                $wp_config          = file_get_contents(ABSPATH . 'wp-config.php');
+                $wp_config_dir_path = ABSPATH . 'wp-config.php';
+            }
+            echo 'wp-config.php 路徑：<strong>' . $wp_config_dir_path . '</strong></br>';
+            $this->show_highlight_string($wp_config);
             echo '<hr></br>';
             echo '頁面功能參考外掛：<a href="https://tw.wordpress.org/plugins/system-dashboard/">System Dashboard</a></br>';
             echo $this->build_table($this->get_wp_all_contants());

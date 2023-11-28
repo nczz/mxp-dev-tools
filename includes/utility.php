@@ -78,6 +78,21 @@ trait Utility {
         return $output;
     }
 
+    public function get_filename_dir_path($file_name) {
+        if (empty($file_name) || !function_exists('get_included_files')) {
+            return array();
+        }
+        $includedFiles = get_included_files();
+        // 在被引入的檔案清單中尋找目標檔案
+        $file_paths = array();
+        foreach ($includedFiles as $file) {
+            if (strtolower(basename($file)) === strtolower($file_name)) {
+                $file_paths[] = $file;
+            }
+        }
+        return $file_paths;
+    }
+
     // 參考： https://gist.github.com/krisanalfa/8315091
     public function phpinfo_print_r($my_array) {
         if (is_array($my_array)) {

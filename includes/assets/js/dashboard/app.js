@@ -4,13 +4,15 @@
             showMonthAfterYear: true,
             changeMonth: true,
             changeYear: true,
-            yearRange: "-100:+0"
+            yearRange: "-100:+0",
+            dateFormat: "yy/mm/dd",
         });
         $('#search_day_to').datepicker({
             showMonthAfterYear: true,
             changeMonth: true,
             changeYear: true,
-            yearRange: "-100:+0"
+            yearRange: "-100:+0",
+            dateFormat: "yy/mm/dd",
         });
         $('#go_search_day').click(function() {
             if ('URLSearchParams' in window) {

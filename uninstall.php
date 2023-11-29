@@ -21,8 +21,8 @@ if (is_multisite()) {
     $value_column = 'meta_value';
 }
 $keys = array(
-    'mxp_dev_zipfile_',
-    'mxp_dev_mysqldump_file_',
+    'mxp_dev_zipfile_%',
+    'mxp_dev_mysqldump_file_%',
     'mxp_dev_packfile_step0',
 );
 foreach ($keys as $index => $key) {

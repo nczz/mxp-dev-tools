@@ -442,7 +442,12 @@
                                     $(self).text('打包檔案(' + item + ')');
                                 }
                             } else if (res.data.status == 'finish') {
-                                $(self).text('準備下載連結中...');
+                                const now = new Date();
+                                const currentMinute = String(now.getMinutes()).padStart(2, '0');
+                                const currentSecond = String(now.getSeconds()).padStart(2, '0');
+                                const currentHour = String(now.getHours()).padStart(2, '0');
+                                const period = now.getHours() >= 12 ? 'PM' : 'AM';
+                                $(self).text('(' + currentHour + ':' + currentMinute + ':' + currentSecond + ' ' + period + ') 準備下載連結中...');
                             } else {
                                 $(self).text(res.msg);
                             }

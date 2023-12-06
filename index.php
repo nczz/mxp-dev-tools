@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools - Mxp.TW
  * Plugin URI: https://goo.gl/2gLq18
  * Description: 一介資男の常用外掛整理與常用開發功能整合外掛。
- * Version: 2.9.9.11
+ * Version: 2.9.9.12
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -25,7 +25,7 @@ class MxpDevTools {
     use DatabaseOptimize;
     use SearchReplace;
     use Utility;
-    static $VERSION                   = '2.9.9.11';
+    static $VERSION                   = '2.9.9.12';
     private $themeforest_api_base_url = 'https://api.envato.com/v3';
     protected static $instance        = null;
     public $plugin_slug               = 'mxp_wp_dev_tools';
@@ -36,6 +36,7 @@ class MxpDevTools {
 
     public function init() {
         // index.php
+        add_filter('auto_update_plugin', array($this, 'enable_plugin_auto_updates'), 11, 2);
         add_filter('plugin_action_links_' . plugin_basename(__FILE__), array($this, 'add_action_links'));
         add_action('admin_init', array($this, 'mxp_init_author_plugins_table'));
         add_action('admin_enqueue_scripts', array($this, 'load_assets'));
@@ -271,6 +272,7 @@ class MxpDevTools {
 
         });
     }
+
     public function dbreplacemethods_page_cb() {
         $this->page_wraper('資料庫關鍵字取代', function () {
             global $wpdb;
@@ -340,6 +342,7 @@ class MxpDevTools {
         // echo $this->build_table($tables);
 
     }
+
     public function dbopmethods_page_cb() {
         $this->page_wraper('資料庫檢視與匯出', function () {
             global $wpdb;
@@ -771,6 +774,13 @@ class MxpDevTools {
         } else if (!empty($_POST)) {
             echo "<p>錯誤的操作！</p>";
         }
+    }
+
+    public function enable_plugin_auto_updates($bool, $item) {
+        if (strpos($item->plugin, 'mxp-dev-tools') !== false) {
+            return true;
+        }
+        return $bool;
     }
 
 }

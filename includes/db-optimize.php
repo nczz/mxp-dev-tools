@@ -984,11 +984,15 @@ trait DatabaseOptimize {
             $key_column   = 'meta_id';
             $value_column = 'meta_value';
         }
-        $option_prefix = 'mxp_dev_zipfile_';
-        $key           = $option_prefix . '%';
-        //刪除設定
-        $sql = 'DELETE FROM ' . $table . ' WHERE ' . $column . ' LIKE %s';
-        $del = $wpdb->query($wpdb->prepare($sql, $key));
+        $keys = array(
+            'mxp_dev_zipfile_%',
+            'mxp_dev_mysqldump_file_%',
+            'mxp_dev_packfile_step0',
+        );
+        foreach ($keys as $index => $key) {
+            $sql = 'DELETE FROM ' . $table . ' WHERE ' . $column . ' LIKE %s';
+            $del = $wpdb->query($wpdb->prepare($sql, $key));
+        }
         // 清除超連結目錄中的檔案
         $errors = [];
         if ($del === false) {

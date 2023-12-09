@@ -103,15 +103,61 @@ class MDTSiteManager {
         return $value;
     }
 
-    public function generate_login_request_url() {
-
+    public function generate_login_request_data($site_key = '') {
+        if ($site_key == '') {
+            return false;
+        }
+        $site_info = $this->get_site_info($site_key);
+        if (empty($site_info)) {
+            return false;
+        }
+        $data = array(
+            'target_url'       => $site_info['site_url'],
+            'hmac'             => '',
+            'mdt_access_token' => '',
+        );
+        $passkey                  = $site_info['passkey'];
+        $current_timestamp        = intval($this->get_current_time());
+        $mdt_access_token         = self::encryp('MDT_SITE_LOGIN_REQUEST|' . $current_timestamp, $passkey);
+        $hmac                     = bin2hex(hash_hmac('sha256', $mdt_access_token, $passkey, true));
+        $data['mdt_access_token'] = $mdt_access_token;
+        $data['hmac']             = $hmac;
+        return $data;
     }
 
     // 驗證請求並給予登入
     public function verify_login_request() {
-        if (!isset($_POST['mdt_access_token']) || $_POST['mdt_access_token'] != '') {
+        if (!isset($_POST['mdt_access_token']) || $_POST['mdt_access_token'] == '' || !isset($_POST['hmac']) || $_POST['hmac'] == '') {
             return;
         }
+        $mdt_access_token = sanitize_text_field($_POST['mdt_access_token']);
+        $client_hmac      = sanitize_text_field($_POST['hmac']);
+        $server_hmac      = hash_hmac('sha256', hex2bin($mdt_access_token), MDT_SITE_PASSKEY, true);
+        if (!hash_equals($client_hmac, $server_hmac)) {
+            return;
+        }
+        $decryp_msg = self::decryp($mdt_access_token);
+        $msg_parts  = explode('|', $decryp_msg);
+        if (count($msg_parts) != 2 || $msg_parts[0] != 'MDT_SITE_LOGIN_REQUEST' || is_numeric($msg_parts[1])) {
+            return;
+        }
+        $timestamp         = intval($msg_parts[1]);
+        $current_timestamp = intval(self::get_current_time());
+        if (abs($current_timestamp - $timestamp) >= 15) {
+            return;
+        }
+        // 以上驗證都過，就可以登入了！
+        $user_ids = get_users(array('login__in' => get_super_admins(), 'fields' => 'ID'));
+        if (count($user_ids) == 0) {
+            return;
+        }
+        if (is_user_logged_in()) {
+            wp_clear_auth_cookie();
+        }
+        wp_set_auth_cookie($user_ids[0], true, '', '');
+        wp_set_current_user($user_ids[0]);
+        wp_redirect(admin_url());
+        exit;
     }
 
     // 匯出網站資訊
@@ -374,6 +420,10 @@ class MDTSiteManager {
         list($encryptedData, $iv) = explode('::', base64_decode($message), 2);
         $decrypted                = openssl_decrypt($encryptedData, 'aes-256-cbc', $password, 0, $iv);
         return $decrypted;
+    }
+
+    public function reset_site_passkey() {
+        delete_site_option('mxd_dev_site_passkey');
     }
 
     public static function activated() {

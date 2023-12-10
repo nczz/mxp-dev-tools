@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Site Manager - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 管理多個 WordPress 站點的工具。
- * Version: 2.9.9.12
+ * Version: 3.0.0
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -34,7 +34,7 @@ if (!defined('MDT_SITES_INFO_KEY')) {
 
 class MDTSiteManager {
     public $plugin_slug    = 'mdt-site-manager';
-    public static $VERSION = '2.9.9.12';
+    public static $VERSION = '3.0.0';
 
     public function __construct() {
         // 註冊程式碼片段的勾點
@@ -48,7 +48,7 @@ class MDTSiteManager {
         add_action('template_redirect', array($this, 'verify_login_request'), -1);
         add_action('wp_ajax_mxp_ajax_site_mamager', array($this, 'ajax_action'));
         // 新增「設定」中的外掛選單
-        if (MDT_SITEMANAGER_DISPLAY && is_super_admin()) {
+        if (is_super_admin()) {
             add_action('admin_menu', array($this, 'admin_menu'));
         }
         add_action('admin_enqueue_scripts', array($this, 'load_assets'));
@@ -75,16 +75,22 @@ class MDTSiteManager {
     }
 
     public function admin_menu() {
-        add_options_page(
-            'Site Manager',
-            'Site Manager',
-            'manage_options',
-            'mxp-site-manager',
-            array(
-                $this,
-                'settings_page',
-            )
-        );
+        $display = MDT_SITEMANAGER_DISPLAY;
+        if (defined('MDT_DISALLOW_FILE_MODS') && MDT_DISALLOW_FILE_MODS == true && defined('MDT_DISALLOW_FILE_MODS_ADMINS') && is_array(MDT_DISALLOW_FILE_MODS_ADMINS) && count(MDT_DISALLOW_FILE_MODS_ADMINS) > 0 && in_array(get_current_user_id(), MDT_DISALLOW_FILE_MODS_ADMINS)) {
+            $display = true;
+        }
+        if ($display) {
+            add_options_page(
+                'Site Manager',
+                'Site Manager',
+                'manage_options',
+                'mxp-site-manager',
+                array(
+                    $this,
+                    'settings_page',
+                )
+            );
+        }
     }
 
     public function load_assets() {
@@ -99,7 +105,7 @@ class MDTSiteManager {
             'all_site_info' => $all_site_info,
         ));
         wp_enqueue_script($this->plugin_slug . '-dashboard');
-        echo date('Y-m-d H:i:s', self::get_current_time());
+        // echo date('Y-m-d H:i:s', self::get_current_time());
         echo '<div id="site_table"></div>';
         echo '<hr><div id="actions"> <button type="button" id="import_site" class="button import">匯入網站設定</button> | <button type="button" id="export_site" class="button export">匯出網站設定</button> | <button type="button" id="reset_site_passkey" class="button reset">重置網站密鑰</button> </div>';
     }

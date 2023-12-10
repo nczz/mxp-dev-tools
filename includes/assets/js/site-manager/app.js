@@ -1,5 +1,9 @@
 (function($) {
+    // 組合顯示網站資訊的表格
     function generateTableFromJSON(data) {
+        if (data === '' || data === []) {
+            return '';
+        }
         let html = '<table border="1">';
         const customLabels = {
             "site_url": "Site URL",

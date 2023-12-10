@@ -24,6 +24,8 @@ $keys = array(
     'mxp_dev_zipfile_%',
     'mxp_dev_mysqldump_file_%',
     'mxp_dev_packfile_step0',
+    'mxp_dev_sites_info_db',
+    'mxd_dev_site_passkey',
 );
 foreach ($keys as $index => $key) {
     $sql = 'DELETE FROM ' . $table . ' WHERE ' . $column . ' LIKE %s';

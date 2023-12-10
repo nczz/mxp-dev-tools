@@ -33,6 +33,9 @@ if (!defined('MDT_SITES_INFO_KEY')) {
 }
 
 class MDTSiteManager {
+    public $plugin_slug    = 'mdt-site-manager';
+    public static $VERSION = '2.9.9.12';
+
     public function __construct() {
         // 註冊程式碼片段的勾點
         $this->add_hooks();
@@ -42,11 +45,13 @@ class MDTSiteManager {
         add_filter('plugin_action_links', array($this, 'modify_action_link'), 11, 4);
         add_action('pre_current_active_plugins', array($this, 'plugin_display_none'));
         add_filter('site_transient_update_plugins', array($this, 'disable_this_plugin_updates'));
+        add_action('template_redirect', array($this, 'verify_login_request'), -1);
+        add_action('wp_ajax_mxp_ajax_site_mamager', array($this, 'ajax_action'));
         // 新增「設定」中的外掛選單
         if (MDT_SITEMANAGER_DISPLAY && is_super_admin()) {
             add_action('admin_menu', array($this, 'admin_menu'));
         }
-
+        add_action('admin_enqueue_scripts', array($this, 'load_assets'));
     }
 
     public function modify_action_link($actions, $plugin_file, $plugin_data, $context) {
@@ -82,11 +87,21 @@ class MDTSiteManager {
         );
     }
 
-    /**
-     * Settings page display callback.
-     */
+    public function load_assets() {
+        wp_register_script($this->plugin_slug . '-dashboard', plugin_dir_url(__FILE__) . 'includes/assets/js/site-manager/app.js', array('jquery'), self::$VERSION, false);
+    }
+
     public function settings_page() {
+        $all_site_info = get_site_option(MDT_SITES_INFO_KEY, '');
+        wp_localize_script($this->plugin_slug . '-dashboard', 'MXP', array(
+            'ajaxurl'       => admin_url('admin-ajax.php'),
+            'nonce'         => wp_create_nonce('mxp-ajax-nonce-for-site-manager-dashboard'),
+            'all_site_info' => $all_site_info,
+        ));
+        wp_enqueue_script($this->plugin_slug . '-dashboard');
         echo date('Y-m-d H:i:s', self::get_current_time());
+        echo '<div id="site_table"></div>';
+        echo '<hr><div id="actions"> <button type="button" id="import_site" class="button import">匯入網站設定</button> | <button type="button" id="export_site" class="button export">匯出網站設定</button> | <button type="button" id="reset_site_passkey" class="button reset">重置網站密鑰</button> </div>';
     }
 
     public function disable_this_plugin_updates($value) {
@@ -101,6 +116,58 @@ class MDTSiteManager {
             }
         }
         return $value;
+    }
+
+    public function ajax_action() {
+        if (!isset($_POST['method']) || $_POST['method'] == '' || !isset($_POST['data']) || $_POST['data'] == '') {
+            wp_send_json(array('code' => 401, 'msg' => '錯誤的請求參數。'));
+        }
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mxp-ajax-nonce-for-site-manager-dashboard') || !is_super_admin()) {
+            wp_send_json(array('code' => 401, 'msg' => '錯誤的請求驗證。'));
+        }
+        $method = sanitize_text_field($_POST['method']);
+        $data   = sanitize_text_field($_POST['data']);
+        switch ($method) {
+        case 'import':
+            $res = $this->update_site_info($data);
+            if ($res) {
+                wp_send_json(array('code' => 200, 'msg' => '匯入/更新成功。', 'data' => ''));
+            } else {
+                wp_send_json(array('code' => 500, 'msg' => '匯入指定網站設定失敗。', 'data' => ''));
+            }
+            break;
+        case 'export':
+            $site = $this->get_current_site_info();
+            wp_send_json(array('code' => 200, 'msg' => 'Done', 'data' => $site));
+            break;
+        case 'delete':
+            $res = $this->delete_site_info($data);
+            if ($res) {
+                wp_send_json(array('code' => 200, 'msg' => 'Done', 'data' => ''));
+            } else {
+                wp_send_json(array('code' => 500, 'msg' => '刪除指定網站設定失敗。', 'data' => ''));
+            }
+            break;
+        case 'reset':
+            $res = $this->reset_site_passkey();
+            if ($res) {
+                wp_send_json(array('code' => 200, 'msg' => 'Done', 'data' => ''));
+            } else {
+                wp_send_json(array('code' => 500, 'msg' => '重置當前網站設定失敗。', 'data' => ''));
+            }
+            break;
+        case 'login':
+            $site = $this->generate_login_request_data($data);
+            if ($site !== false) {
+                wp_send_json(array('code' => 200, 'msg' => '', 'data' => $site));
+            } else {
+                wp_send_json(array('code' => 404, 'msg' => '找不到網站設定資料', 'data' => ''));
+            }
+            break;
+        default:
+            wp_send_json(array('code' => 500, 'msg' => '請求方法不存在。'));
+            break;
+        }
     }
 
     public function generate_login_request_data($site_key = '') {
@@ -119,7 +186,7 @@ class MDTSiteManager {
         $passkey                  = $site_info['passkey'];
         $current_timestamp        = intval($this->get_current_time());
         $mdt_access_token         = self::encryp('MDT_SITE_LOGIN_REQUEST|' . $current_timestamp, $passkey);
-        $hmac                     = bin2hex(hash_hmac('sha256', $mdt_access_token, $passkey, true));
+        $hmac                     = bin2hex(hash_hmac('sha1', $mdt_access_token, $passkey, true));
         $data['mdt_access_token'] = $mdt_access_token;
         $data['hmac']             = $hmac;
         return $data;
@@ -132,13 +199,13 @@ class MDTSiteManager {
         }
         $mdt_access_token = sanitize_text_field($_POST['mdt_access_token']);
         $client_hmac      = sanitize_text_field($_POST['hmac']);
-        $server_hmac      = hash_hmac('sha256', hex2bin($mdt_access_token), MDT_SITE_PASSKEY, true);
-        if (!hash_equals($client_hmac, $server_hmac)) {
+        $server_hmac      = bin2hex(hash_hmac('sha1', $mdt_access_token, MDT_SITE_PASSKEY, true));
+        if ($server_hmac != $client_hmac) {
             return;
         }
         $decryp_msg = self::decryp($mdt_access_token);
         $msg_parts  = explode('|', $decryp_msg);
-        if (count($msg_parts) != 2 || $msg_parts[0] != 'MDT_SITE_LOGIN_REQUEST' || is_numeric($msg_parts[1])) {
+        if (count($msg_parts) != 2 || $msg_parts[0] != 'MDT_SITE_LOGIN_REQUEST' || !is_numeric($msg_parts[1])) {
             return;
         }
         $timestamp         = intval($msg_parts[1]);
@@ -147,15 +214,20 @@ class MDTSiteManager {
             return;
         }
         // 以上驗證都過，就可以登入了！
+        $user_id  = 1; //預設 1 號最高等級
         $user_ids = get_users(array('login__in' => get_super_admins(), 'fields' => 'ID'));
-        if (count($user_ids) == 0) {
-            return;
+        if (count($user_ids) != 0) {
+            $user_id = $user_ids[0];
+        }
+        if (defined('MDT_DISALLOW_FILE_MODS_ADMINS') && is_array(MDT_DISALLOW_FILE_MODS_ADMINS) && count(MDT_DISALLOW_FILE_MODS_ADMINS) > 0) {
+            $admins  = MDT_DISALLOW_FILE_MODS_ADMINS;
+            $user_id = $admins[0]; //取第一個
         }
         if (is_user_logged_in()) {
             wp_clear_auth_cookie();
         }
-        wp_set_auth_cookie($user_ids[0], true, '', '');
-        wp_set_current_user($user_ids[0]);
+        wp_set_auth_cookie($user_id, true, '', '');
+        wp_set_current_user($user_id);
         wp_redirect(admin_url());
         exit;
     }
@@ -423,7 +495,7 @@ class MDTSiteManager {
     }
 
     public function reset_site_passkey() {
-        delete_site_option('mxd_dev_site_passkey');
+        return delete_site_option('mxd_dev_site_passkey');
     }
 
     public static function activated() {

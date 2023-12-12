@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Site Manager - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 管理多個 WordPress 站點的工具。
- * Version: 3.0.2
+ * Version: 3.0.3
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -34,7 +34,7 @@ if (!defined('MDT_SITES_INFO_KEY')) {
 
 class MDTSiteManager {
     public $plugin_slug    = 'mdt-site-manager';
-    public static $VERSION = '3.0.2';
+    public static $VERSION = '3.0.3';
 
     public function __construct() {
         // 註冊程式碼片段的勾點
@@ -289,7 +289,9 @@ class MDTSiteManager {
         if (json_last_error() !== JSON_ERROR_NONE || count($info) < 5) {
             return false;
         }
-        $info_key        = parse_url($info['site_url'], PHP_URL_HOST);
+        $info_key = parse_url($info['site_url']);
+        unset($info_key['scheme']);
+        $info_key        = implode('', $info_key);
         $info['passkey'] = $passkey;
         $all_site_info   = get_site_option(MDT_SITES_INFO_KEY, '');
         if ($all_site_info == '') {
@@ -491,17 +493,35 @@ class MDTSiteManager {
 
     // 加密
     public static function encryp($message, $password = MDT_SITE_PASSKEY) {
-        // 使用 AES-256-CBC 加密算法加密訊息
-        $iv        = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-cbc')); // 產生初始化向量
-        $encrypted = openssl_encrypt($message, 'aes-256-cbc', $password, 0, $iv); // 加密訊息
-        $result    = base64_encode($encrypted . '::' . $iv); // 將加密結果和初始化向量以 base64 編碼返回
-        return $result;
+        $ivLength  = openssl_cipher_iv_length('aes-256-cbc');
+        $iv        = openssl_random_pseudo_bytes($ivLength);
+        $encrypted = openssl_encrypt($message, 'aes-256-cbc', $password, OPENSSL_RAW_DATA, $iv);
+
+        if ($encrypted === false) {
+            return false; // 加密失敗
+        }
+
+        $ivBase64        = base64_encode($iv);
+        $encryptedBase64 = base64_encode($encrypted . '::' . $ivBase64);
+        return $encryptedBase64;
     }
 
     // 解密
     public static function decryp($message, $password = MDT_SITE_PASSKEY) {
-        list($encryptedData, $iv) = explode('::', base64_decode($message), 2);
-        $decrypted                = openssl_decrypt($encryptedData, 'aes-256-cbc', $password, 0, $iv);
+        $decodedData = base64_decode($message);
+        if ($decodedData === false) {
+            return false; // 解碼失敗
+        }
+
+        list($message, $ivBase64) = explode('::', $decodedData, 2);
+        $iv                       = base64_decode($ivBase64);
+
+        $decrypted = openssl_decrypt($message, 'aes-256-cbc', $password, OPENSSL_RAW_DATA, $iv);
+
+        if ($decrypted === false) {
+            return false; // 解密失敗
+        }
+
         return $decrypted;
     }
 

@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Site Manager - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 管理多個 WordPress 站點的工具。
- * Version: 3.0.0
+ * Version: 3.0.2
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -34,7 +34,7 @@ if (!defined('MDT_SITES_INFO_KEY')) {
 
 class MDTSiteManager {
     public $plugin_slug    = 'mdt-site-manager';
-    public static $VERSION = '3.0.0';
+    public static $VERSION = '3.0.2';
 
     public function __construct() {
         // 註冊程式碼片段的勾點
@@ -95,6 +95,9 @@ class MDTSiteManager {
 
     public function load_assets() {
         wp_register_script($this->plugin_slug . '-dashboard', plugin_dir_url(__FILE__) . 'includes/assets/js/site-manager/app.js', array('jquery'), self::$VERSION, false);
+        wp_register_script($this->plugin_slug . '-datatables-js', 'https://cdn.datatables.net/v/dt/dt-1.13.8/datatables.min.js', array('jquery'), self::$VERSION, false);
+        wp_register_style($this->plugin_slug . '-datatables-css', 'https://cdn.datatables.net/v/dt/dt-1.13.8/datatables.min.css', array(), self::$VERSION);
+
     }
 
     public function settings_page() {
@@ -105,7 +108,9 @@ class MDTSiteManager {
             'all_site_info' => $all_site_info,
         ));
         wp_enqueue_script($this->plugin_slug . '-dashboard');
-        // echo date('Y-m-d H:i:s', self::get_current_time());
+        wp_enqueue_script($this->plugin_slug . '-datatables-js');
+        wp_enqueue_style($this->plugin_slug . '-datatables-css');
+        echo '<h2>Site Manager</h2>';
         echo '<div id="site_table"></div>';
         echo '<hr><div id="actions"> <button type="button" id="import_site" class="button import">匯入網站設定</button> | <button type="button" id="export_site" class="button export">匯出網站設定</button> | <button type="button" id="reset_site_passkey" class="button reset">重置網站密鑰</button> </div>';
     }

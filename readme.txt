@@ -3,9 +3,9 @@ Contributors: mxp
 Donate link: https://mxp.tw/jT
 Tags: Mxp.TW, 常用外掛, 開發工具箱, 敲敲設計, Themeforest, API, 批次安裝, Plugin, 外掛, Admin, Installation, chinese, 中文 
 Requires at least: 4.6
-Requires PHP: 7.0
+Requires PHP: 5.6
 Tested up to: 6.4
-Stable tag: 3.0.0
+Stable tag: 3.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,9 +78,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 == Changelog ==
 
-= 3.0.0 =
+= 3.0.2 =
 
 * 新增多網站登入管理子外掛
+* 修正匯入網站設定值為 null 時的判斷
+* 站點管理工具頁面表格使用 datatables 工具處理
 
 = 2.9.9.12 =
 

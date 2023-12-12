@@ -4,7 +4,7 @@
         if (data === '' || data === []) {
             return '';
         }
-        let html = '<table border="1">';
+        let html = '<table id="mxp_table" border="1">';
         const customLabels = {
             "site_url": "Site URL",
             "site_name": "Site Name",
@@ -17,11 +17,11 @@
             "action": "操作",
         };
         const keys = Object.keys(customLabels);
-        html += '<tr>';
+        html += '<thead><tr>';
         keys.forEach(key => {
             html += `<th>${customLabels[key]}</th>`;
         });
-        html += '</tr>';
+        html += '</tr></thead><tbody>';
         // Generating table rows
         for (const key in data) {
             html += '<tr>';
@@ -60,11 +60,22 @@
                     str = '<button type="button" class="button login" data-site="' + key + '">登入</button> | ';
                     str += '<button type="button" class="button delete" data-site="' + key + '">刪除</button>';
                 }
-                html += `<td>${str}</td>`;
+                if (tableKey == 'whois') {
+                    var expiration = item['whois']['data']['expiration'] !== undefined ? item['whois']['data']['expiration'] : '';
+                    if (expiration != '') {
+                        html += `<td data-order="${expiration}">${str}</td>`;
+                    } else {
+                        html += `<td>${str}</td>`;
+                    }
+                } else if (tableKey == 'site_url') {
+                    html += `<td data-search="${key}">${str}</td>`;
+                } else {
+                    html += `<td>${str}</td>`;
+                }
             });
             html += '</tr>';
         }
-        html += '</table>';
+        html += '</tbody></table>';
         return html;
     }
 
@@ -137,7 +148,7 @@
         }
         // 移除 input 元素
         document.body.removeChild(input);
-        prompt("已複製到剪貼簿！", text);
+        prompt("複製到剪貼簿：", text);
     }
     // 組合送出的表單
     function submit_login_form(mdt_access_token, hmac, target_url) {
@@ -171,6 +182,14 @@
         if (tableContainer) {
             const tableHTML = generateTableFromJSON(MXP.all_site_info);
             tableContainer.innerHTML = tableHTML;
+            if (tableHTML != '') {
+                $('#mxp_table').DataTable({
+                    "ordering": true,
+                    "order": [
+                        [7, 'desc']
+                    ],
+                });
+            }
         } else {
             console.log('Table container not found.');
         }
@@ -199,7 +218,7 @@
         // 匯入其它網站資訊
         $('#import_site').click(function() {
             let site_info = prompt("請填入網站匯出資料：");
-            if (site_info == '') {
+            if (site_info == '' || site_info == null) {
                 alert('匯入資料不得為空。');
                 return;
             }

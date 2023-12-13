@@ -184,17 +184,21 @@
             tableContainer.innerHTML = tableHTML;
             if (tableHTML != '') {
                 $('#mxp_table').DataTable({
+                    "paging": false,
                     "ordering": true,
                     "order": [
                         [7, 'asc']
                     ],
+                    "drawCallback": function(settings) {
+                        console.log('Table draw!');
+                        $('.delete').click(del_site);
+                        $('.login').click(login_site);
+                    },
                 });
             }
         } else {
             console.log('Table container not found.');
         }
-        $('.delete').click(del_site);
-        $('.login').click(login_site);
         // 重置網站當前的密鑰
         $('#reset_site_passkey').click(function() {
             if (!confirm('你是否確認要重置本站的設定資料？')) {

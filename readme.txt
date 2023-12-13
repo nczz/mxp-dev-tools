@@ -5,7 +5,7 @@ Tags: Mxp.TW, 常用外掛, 開發工具箱, 敲敲設計, Themeforest, API, 批
 Requires at least: 4.6
 Requires PHP: 5.6
 Tested up to: 6.4
-Stable tag: 3.0.5
+Stable tag: 3.0.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,7 +78,7 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 == Changelog ==
 
-= 3.0.5 =
+= 3.0.6 =
 
 * 新增多網站登入管理子外掛
 * 修正匯入網站設定值為 null 時的判斷
@@ -86,6 +86,7 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 * 修正加解密方法的相容性問題
 * 修正單獨啟用站點管理的工具的錯誤
 * 修正 DataTables 註冊表格中按鈕事件失效的錯誤
+* 修正站點管理外掛登入時有可能不是總管理員的問題
 
 = 2.9.9.12 =
 

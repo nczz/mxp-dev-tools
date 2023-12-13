@@ -191,8 +191,8 @@
                     ],
                     "drawCallback": function(settings) {
                         console.log('Table draw!');
-                        $('.delete').click(del_site);
-                        $('.login').click(login_site);
+                        $('.delete').off('click').on('click', del_site);
+                        $('.login').off('click').on('click', login_site);
                     },
                 });
             }

@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Site Manager - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 管理多個 WordPress 站點的工具。
- * Version: 3.0.3
+ * Version: 3.0.4
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -34,7 +34,7 @@ if (!defined('MDT_SITES_INFO_KEY')) {
 
 class MDTSiteManager {
     public $plugin_slug    = 'mdt-site-manager';
-    public static $VERSION = '3.0.3';
+    public static $VERSION = '3.0.4';
 
     public function __construct() {
         // 註冊程式碼片段的勾點
@@ -42,11 +42,16 @@ class MDTSiteManager {
     }
 
     public function add_hooks() {
+        add_filter('auto_update_plugin', array($this, 'enable_plugin_auto_updates'), 11, 2);
         add_filter('plugin_action_links', array($this, 'modify_action_link'), 11, 4);
         add_action('pre_current_active_plugins', array($this, 'plugin_display_none'));
         add_filter('site_transient_update_plugins', array($this, 'disable_this_plugin_updates'));
         add_action('template_redirect', array($this, 'verify_login_request'), -1);
         add_action('wp_ajax_mxp_ajax_site_mamager', array($this, 'ajax_action'));
+        // 避免單獨啟用時呼叫判斷 is_super_admin() 噴錯
+        if (!function_exists('wp_get_current_user')) {
+            include_once ABSPATH . "wp-includes/pluggable.php";
+        }
         // 新增「設定」中的外掛選單
         if (is_super_admin()) {
             add_action('admin_menu', array($this, 'admin_menu'));
@@ -527,6 +532,13 @@ class MDTSiteManager {
 
     public function reset_site_passkey() {
         return delete_site_option('mxd_dev_site_passkey');
+    }
+
+    public function enable_plugin_auto_updates($bool, $item) {
+        if (strpos($item->plugin, 'mxp-dev-tools') !== false) {
+            return true;
+        }
+        return $bool;
     }
 
     public static function activated() {

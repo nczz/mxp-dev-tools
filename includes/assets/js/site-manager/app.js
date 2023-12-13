@@ -186,7 +186,7 @@
                 $('#mxp_table').DataTable({
                     "ordering": true,
                     "order": [
-                        [7, 'desc']
+                        [7, 'asc']
                     ],
                 });
             }

@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Snippets - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 整合 GitHub 中常用的程式碼片段。請注意，並非所有網站都適用全部的選項，有進階需求可以透過設定 wp-config.php 中此外掛預設常數，啟用或停用部分功能。
- * Version: 3.0.6
+ * Version: 3.0.7
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -129,6 +129,10 @@ if (!defined('MDT_USER_CAN_REG')) {
 // 預設關閉自動回報功能，打開此設定需要重新啟用外掛
 if (!defined('MDT_SITE_HEALTH_REPORT_CRON')) {
     define('MDT_SITE_HEALTH_REPORT_CRON', false);
+}
+// 預設顯示使用者註冊時間排序功能
+if (!defined('MDT_ENABLE_RECENTLY_REGISTERED')) {
+    define('MDT_ENABLE_RECENTLY_REGISTERED', true);
 }
 
 class MDTSnippets {
@@ -273,6 +277,59 @@ class MDTSnippets {
         // 設定 Cron 來回報網站狀態
         add_filter('cron_schedules', array($this, 'add_cron_schedules'));
         add_action('mxp_site_health_report_cron', array($this, 'mxp_site_health_report_cron_action'));
+        // 顯示使用者帳號的註冊時間，移植此款外掛 https://tw.wordpress.org/plugins/recently-registered/
+        if (MDT_ENABLE_RECENTLY_REGISTERED) {
+            add_action('admin_init', array($this, 'recently_registered'));
+        }
+    }
+
+    public function recently_registered() {
+        if (is_admin()) {
+            add_filter('manage_users_columns', function ($columns) {
+                $columns['registerdate'] = '註冊時間';
+                return $columns;
+            });
+            add_action('manage_users_custom_column', function ($value, $column_name, $user_id) {
+                global $mode;
+                $list_mode = empty($_REQUEST['mode']) ? 'list' : sanitize_text_field($_REQUEST['mode']);
+
+                if ('registerdate' !== $column_name) {
+                    return $value;
+                } else {
+                    $user = get_userdata($user_id);
+                    if (is_multisite() && ('list' === $list_mode)) {
+                        $formated_date = 'Y/m/d';
+                    } else {
+                        $formated_date = 'Y/m/d g:i:s a';
+                    }
+                    $registered = strtotime(get_date_from_gmt($user->user_registered));
+                    // If the date is negative or in the future, then something's wrong, so we'll be unknown.
+                    if (($registered <= 0) || (time() <= $registered)) {
+                        $registerdate = '<span class="recently-registered invalid-date">未知時間</span>';
+                    } else {
+                        $registerdate = '<span class="recently-registered valid-date">' . date_i18n($formated_date, $registered) . '</span>';
+                    }
+                    return $registerdate;
+                }
+            }, 10, 3);
+            add_filter('manage_users_sortable_columns', function ($columns) {
+                $custom = array(
+                    // meta column id => sortby value used in query
+                    'registerdate' => 'registered',
+                );
+                return wp_parse_args($custom, $columns);
+            });
+            add_filter('request', function ($vars) {
+                if (isset($vars['orderby']) && 'registerdate' == $vars['orderby']) {
+                    $new_vars = array(
+                        'meta_key' => 'registerdate',
+                        'orderby'  => 'meta_value',
+                    );
+                    $vars = array_merge($vars, $new_vars);
+                }
+                return $vars;
+            });
+        }
     }
 
     public function mxp_site_health_report_cron_action() {

@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Snippets - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 整合 GitHub 中常用的程式碼片段。請注意，並非所有網站都適用全部的選項，有進階需求可以透過設定 wp-config.php 中此外掛預設常數，啟用或停用部分功能。
- * Version: 3.0.7
+ * Version: 3.0.8
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -134,7 +134,10 @@ if (!defined('MDT_SITE_HEALTH_REPORT_CRON')) {
 if (!defined('MDT_ENABLE_RECENTLY_REGISTERED')) {
     define('MDT_ENABLE_RECENTLY_REGISTERED', true);
 }
-
+// 預設對非管理員隱藏「自訂」連結
+if (!defined('MDT_HIDE_CUSTOMIZE_LINK')) {
+    define('MDT_HIDE_CUSTOMIZE_LINK', true);
+}
 class MDTSnippets {
     public function __construct() {
         // 註冊程式碼片段的勾點
@@ -214,7 +217,7 @@ class MDTSnippets {
         remove_action('template_redirect', 'wp_shortlink_header', 11);
         if (MDT_DISABLE_REST_INDEX) {
             // 關閉 wp-json 首頁顯示的 API 清單
-            add_filter('rest_index', '__return_empty_array');
+            add_filter('rest_index', array($this, 'rest_response_empty_array'), 11, 2);
         }
         // 沒登入的使用者都無法呼叫 wp/users 這隻 API。不建議完全封鎖掉，會導致有些後台功能運作失靈
         if (function_exists('is_user_logged_in') && !is_user_logged_in() && MDT_DISABLE_NO_AUTH_ACCESS_REST_USER) {
@@ -281,6 +284,26 @@ class MDTSnippets {
         if (MDT_ENABLE_RECENTLY_REGISTERED) {
             add_action('admin_init', array($this, 'recently_registered'));
         }
+        if (MDT_HIDE_CUSTOMIZE_LINK) {
+            add_action('admin_menu', array($this, 'remove_customize_link'));
+        }
+    }
+
+    public function remove_customize_link() {
+        $user          = wp_get_current_user();
+        $allowed_roles = apply_filters('mxp_dev_show_menu_customize_link_roles', array('administrator'));
+        //不是管理員，都把下面的設定選項移除
+        if (!array_intersect($allowed_roles, $user->roles)) {
+            $customize_url = add_query_arg('return', urlencode(remove_query_arg(wp_removable_query_args(), wp_unslash($_SERVER['REQUEST_URI']))), 'customize.php');
+            remove_submenu_page('themes.php', $customize_url);
+        }
+    }
+    public function rest_response_empty_array($response, $request) {
+        $new_response = new \WP_REST_Response();
+        // 將空資料設定給 WP_REST_Response 物件
+        $new_response->set_data(array());
+        // 回傳 WP_REST_Response 物件
+        return $new_response;
     }
 
     public function recently_registered() {

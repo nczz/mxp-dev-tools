@@ -9,6 +9,9 @@
             if (p.status == 'install') {
                 $('.mxp-install[data-id="p_' + p.id + '"]').prop('disabled', false)
             }
+            if (p.status == 'update_available') {
+                $('.mxp-update[data-id="p_' + p.id + '"]').prop('disabled', false)
+            }
         }
     }
     $(document).ajaxStop(function() {
@@ -39,6 +42,40 @@
                         info.file = update_info.file;
                         info.status = update_info.status;
                         $('div.' + id).html('<font color=blue>安裝成功！</font>');
+                        $('#' + id).val(JSON.stringify(info));
+                    } else {
+                        var msg = res.data.errorMessage !== undefined ? res.data.errorMessage : res.data.data.msg;
+                        $('div.' + id).html('<font color=red>' + msg + '</font>');
+                        $(self).prop('disabled', true);
+                    }
+                    next();
+                });
+            });
+        });
+        $('.mxp-update').click(function() {
+            var id = $(this).data('id');
+            $('div.' + id).html('<font color=red>更新中...</font>');
+            var info = JSON.parse($('#' + id).val());
+            var data = {
+                'action': 'mxp_install_plugin',
+                'nonce': Mxp_AJAX.nonce,
+                'activated': info.activated,
+                'dlink': info.dlink,
+                'slug': info.slug,
+                'file': info.file,
+                'name': info.name,
+                'version': info.version,
+                'update': 'true',
+            };
+            var self = this;
+            $(this).prop('disabled', true);
+            $(document).queue(function(next) {
+                $.post(ajaxurl, data, function(res) {
+                    if (res.success) {
+                        var update_info = JSON.parse(res.data.info);
+                        info.file = update_info.file;
+                        info.status = update_info.status;
+                        $('div.' + id).html('<font color=blue>更新成功！</font>');
                         $('#' + id).val(JSON.stringify(info));
                     } else {
                         var msg = res.data.errorMessage !== undefined ? res.data.errorMessage : res.data.data.msg;

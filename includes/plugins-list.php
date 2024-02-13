@@ -64,12 +64,13 @@ trait PluginsList {
         $file      = sanitize_text_field(isset($_POST['file']) == true ? $_POST['file'] : "");
         $dlink     = isset($_POST['dlink']) == true ? $_POST['dlink'] : "";
         $slug      = sanitize_text_field(isset($_POST['slug']) == true ? $_POST['slug'] : "");
+        $update    = sanitize_text_field(isset($_POST['update']) == true ? $_POST['update'] : "");
         $version   = sanitize_text_field(isset($_POST['version']) == true ? $_POST['version'] : "");
         $name      = sanitize_text_field(isset($_POST['name']) == true ? $_POST['name'] : "");
         if ($activated == "" || $dlink == "" || $slug == "" || $version == "" || $name == "") {
             wp_send_json_error(array('status' => false, 'data' => array('msg' => '錯誤的請求資料')));
         }
-        if ($activated === 'true' || $file != 'false') {
+        if (empty($update) && ($activated === 'true' || $file != 'false')) {
             wp_send_json_error(array('status' => false, 'data' => array('msg' => '已經安裝')));
         }
         if (!wp_is_file_mod_allowed('mxp_ajax_install_plugin')) {
@@ -78,9 +79,13 @@ trait PluginsList {
         include_once ABSPATH . 'wp-admin/includes/file.php';
         include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
         //code reference from wp-admin/includes/ajax-actions.php
-        $skin     = new \WP_Ajax_Upgrader_Skin();
+        $skin = new \WP_Ajax_Upgrader_Skin();
+        $args = array();
+        if (!empty($update)) {
+            $args = array('overwrite_package' => true);
+        }
         $upgrader = new \Plugin_Upgrader($skin);
-        $result   = $upgrader->install($dlink);
+        $result   = $upgrader->install($dlink, $args);
         if (defined('WP_DEBUG') && WP_DEBUG) {
             $status['debug'] = $skin->get_upgrade_messages();
         }

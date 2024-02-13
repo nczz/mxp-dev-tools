@@ -113,7 +113,7 @@ class Mxp_Plugins_List_Table extends WP_List_Table {
         for ($i = 0; $i < count($data); ++$i) {
             if ($data[$i]['dlink'] == "") {
                 $requests[] = [
-                    'url'     => 'https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request[slug]=' . $data[$i]['slug'] . '&request[locale]=zh_TW&request[wp_version]=6.3',
+                    'url'     => 'https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request[slug]=' . $data[$i]['slug'] . '&request[locale]=zh_TW&request[wp_version]=' . get_bloginfo('version'),
                     'headers' => ['Accept' => 'application/json'],
                 ];
             }

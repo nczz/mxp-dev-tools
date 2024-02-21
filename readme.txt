@@ -5,7 +5,7 @@ Tags: Mxp.TW, 常用外掛, 開發工具箱, 敲敲設計, Themeforest, API, 批
 Requires at least: 4.6
 Requires PHP: 5.6
 Tested up to: 6.4
-Stable tag: 3.0.9
+Stable tag: 3.0.10
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -77,6 +77,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 可以透過網站的[聯絡我](https://www.mxp.tw/contact/)，跟我說！
 
 == Changelog ==
+
+= 3.0.10 =
+
+* Snippets 新增 `?opcache_reset=1` 這樣 URL 請求方式清除 PHP OPCache 的功能
+* Snippets 新增 預設除了管理員之外，其他使用者的前端 Admin Bar 選單最小化整理
 
 = 3.0.9 =
 

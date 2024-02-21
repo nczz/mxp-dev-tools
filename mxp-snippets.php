@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Snippets - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 整合 GitHub 中常用的程式碼片段。請注意，並非所有網站都適用全部的選項，有進階需求可以透過設定 wp-config.php 中此外掛預設常數，啟用或停用部分功能。
- * Version: 3.0.9
+ * Version: 3.0.10
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -137,6 +137,10 @@ if (!defined('MDT_ENABLE_RECENTLY_REGISTERED')) {
 // 預設對非管理員隱藏「自訂」連結
 if (!defined('MDT_HIDE_CUSTOMIZE_LINK')) {
     define('MDT_HIDE_CUSTOMIZE_LINK', true);
+}
+// 預設對非管理員隱藏前端 Admin Bar 選項
+if (!defined('MDT_HIDE_FRONTEND_ADMIN_BAR')) {
+    define('MDT_HIDE_FRONTEND_ADMIN_BAR', true);
 }
 class MDTSnippets {
     public function __construct() {
@@ -286,6 +290,13 @@ class MDTSnippets {
         }
         if (MDT_HIDE_CUSTOMIZE_LINK) {
             add_action('admin_menu', array($this, 'remove_customize_link'));
+        }
+        if (MDT_HIDE_FRONTEND_ADMIN_BAR) {
+            add_action('admin_bar_menu', array($this, 'hide_frontend_admin_bar'), 99999, 1);
+        }
+        // 清除 OPCache 快取方法
+        if (isset($_REQUEST['opcache_reset']) && function_exists('opcache_reset')) {
+            opcache_reset();
         }
     }
 
@@ -579,9 +590,37 @@ class MDTSnippets {
             add_theme_support('wc-product-gallery-slider');
         }
     }
+    // 隱藏非管理員的前端上方控制選單
+    public function hide_frontend_admin_bar($wp_admin_bar) {
+        if (is_admin()) {
+            // 後台不設限，僅針對前台
+            return;
+        }
+        $user          = wp_get_current_user();
+        $allowed_roles = apply_filters('mxp_dev_show_frontend_admin_bar_roles', array('administrator'));
+        if (!array_intersect($allowed_roles, $user->roles)) {
+            $all_list   = $wp_admin_bar->get_nodes();
+            $allow_list = apply_filters('mxp_dev_show_frontend_admin_bar_nodes', array("my-account", "search", "logout", "edit-profile", "user-info", "user-actions", "switch-back", "site-name", "dashboard", "top-secondary", "mxp_dev_hooks_usage"));
+            if (is_singular() || is_page() || is_single()) {
+                $allow_list[] = "edit";
+            }
+            foreach ($all_list as $node_id => $node_obj) {
+                if (!in_array($node_id, $allow_list)) {
+                    $wp_admin_bar->remove_node($node_id);
+                }
+            }
+            add_filter('elementor/frontend/admin_bar/settings', function ($settings) {
+                unset($settings['elementor_edit_page']);
+                return $settings;
+            }, 99999, 1);
+        }
+    }
 
     //移除css, js資源載入時的版本資訊
     public function remove_version_query($src) {
+        if (empty($src)) {
+            return $src;
+        }
         if (strpos($src, 'ver=')) {
             $src = remove_query_arg('ver', $src);
         }

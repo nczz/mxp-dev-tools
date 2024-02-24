@@ -43,3 +43,12 @@ if (is_dir($mxpdev_folder)) {
     }
     closedir($folder);
 }
+// 清除自動更新的設定
+$asset        = 'mxp-dev-tools/index.php';
+$option       = 'auto_update_plugins';
+$auto_updates = (array) get_site_option($option, array());
+$key          = array_search($asset, $auto_updates);
+if ($key !== false) {
+    unset($auto_updates[$key]);
+    update_site_option($option, array_values($auto_updates));
+}

@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Site Manager - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 管理多個 WordPress 站點的工具。
- * Version: 3.0.12
+ * Version: 3.0.13
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -24,7 +24,7 @@ if (!defined('MDT_SITEMANAGER_DISPLAY')) {
 }
 
 if (!defined('MDT_SITE_PASSKEY')) {
-    define('MDT_SITE_PASSKEY', MDTSiteManager::activated());
+    define('MDT_SITE_PASSKEY', MDTSiteManager::site_passkey());
 }
 
 // 紀錄在哪個欄位的名稱
@@ -34,7 +34,7 @@ if (!defined('MDT_SITES_INFO_KEY')) {
 
 class MDTSiteManager {
     public $plugin_slug    = 'mdt-site-manager';
-    public static $VERSION = '3.0.12';
+    public static $VERSION = '3.0.13';
 
     public function __construct() {
         // 註冊程式碼片段的勾點
@@ -553,7 +553,7 @@ class MDTSiteManager {
         return $auto_updates;
     }
 
-    public static function activated() {
+    public static function site_passkey() {
         $site_passkey = get_site_option('mxd_dev_site_passkey', '');
         if ($site_passkey == '') {
             $site_passkey = self::generate_random_password();
@@ -562,11 +562,26 @@ class MDTSiteManager {
         return $site_passkey;
     }
 
+    public static function activated() {
+        $asset  = 'mxp-dev-tools/index.php';
+        $option = 'auto_update_plugins';
+        if (!function_exists('get_plugins')) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+        $all_items = apply_filters('all_plugins', get_plugins());
+        if (array_key_exists($asset, $all_items)) {
+            $auto_updates   = (array) get_site_option($option, array());
+            $auto_updates[] = $asset;
+            $auto_updates   = array_unique($auto_updates);
+            update_site_option($option, $auto_updates);
+        }
+    }
+
     public static function deactivated() {
 
     }
 }
 
 $GLOBALS['mxp_site_manager'] = $mxp_site_manager = new MDTSiteManager();
-// register_activation_hook(__FILE__, array($mxp_site_manager, 'activated'));
+register_activation_hook(__FILE__, array($mxp_site_manager, 'activated'));
 // register_deactivation_hook(__FILE__, array($mxp_site_manager, 'deactivated'));

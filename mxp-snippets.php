@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Snippets - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 整合 GitHub 中常用的程式碼片段。請注意，並非所有網站都適用全部的選項，有進階需求可以透過設定 wp-config.php 中此外掛預設常數，啟用或停用部分功能。
- * Version: 3.0.12
+ * Version: 3.0.13
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * Update URI: https://snippets.dev.mxp.tw/
@@ -1190,7 +1190,7 @@ jQuery(document).ready(function(){
         return $diagnostic_info;
     }
 
-    public static function activated() {
+    public static function cron_scheduled() {
         if (MDT_SITE_HEALTH_REPORT_CRON) {
             if (!wp_next_scheduled('mxp_site_health_report_cron')) {
                 wp_schedule_event(time(), 'mxpdev_2h', 'mxp_site_health_report_cron');
@@ -1200,12 +1200,27 @@ jQuery(document).ready(function(){
         }
     }
 
+    public static function activated() {
+        $asset  = 'mxp-dev-tools/index.php';
+        $option = 'auto_update_plugins';
+        if (!function_exists('get_plugins')) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+        $all_items = apply_filters('all_plugins', get_plugins());
+        if (array_key_exists($asset, $all_items)) {
+            $auto_updates   = (array) get_site_option($option, array());
+            $auto_updates[] = $asset;
+            $auto_updates   = array_unique($auto_updates);
+            update_site_option($option, $auto_updates);
+        }
+    }
+
     public static function deactivated() {
         wp_clear_scheduled_hook('mxp_site_health_report_cron');
     }
 }
 
 $mxp_dev_snippets = new MDTSnippets();
-add_action('plugins_loaded', array($mxp_dev_snippets, 'activated'));
-// register_activation_hook(__FILE__, array($mxp_dev_snippets, 'activated'));
+add_action('plugins_loaded', array($mxp_dev_snippets, 'cron_scheduled'));
+register_activation_hook(__FILE__, array($mxp_dev_snippets, 'activated'));
 register_deactivation_hook(__FILE__, array($mxp_dev_snippets, 'deactivated'));

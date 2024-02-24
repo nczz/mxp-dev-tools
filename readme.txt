@@ -5,7 +5,7 @@ Tags: Mxp.TW, 常用外掛, 開發工具箱, 敲敲設計, Themeforest, API, 批
 Requires at least: 4.6
 Requires PHP: 5.6
 Tested up to: 6.4
-Stable tag: 3.0.10
+Stable tag: 3.0.12
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -77,6 +77,15 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 可以透過網站的[聯絡我](https://www.mxp.tw/contact/)，跟我說！
 
 == Changelog ==
+
+= 3.0.12 =
+
+* Snippets 新增禁止使用者登入功能
+
+= 3.0.11 =
+
+* 修正外掛自動更新機制
+* 新增外掛自動更新勾點，增加客製化指定更新與安裝外掛的方法
 
 = 3.0.10 =
 

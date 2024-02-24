@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools - Mxp.TW
  * Plugin URI: https://goo.gl/2gLq18
  * Description: 一介資男の常用外掛整理與常用開發功能整合外掛。
- * Version: 3.0.10
+ * Version: 3.0.12
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -25,7 +25,7 @@ class MxpDevTools {
     use DatabaseOptimize;
     use SearchReplace;
     use Utility;
-    static $VERSION                   = '3.0.10';
+    static $VERSION                   = '3.0.12';
     private $themeforest_api_base_url = 'https://api.envato.com/v3';
     protected static $instance        = null;
     public $plugin_slug               = 'mxp_wp_dev_tools';
@@ -37,6 +37,8 @@ class MxpDevTools {
     public function init() {
         // index.php
         add_filter('auto_update_plugin', array($this, 'enable_plugin_auto_updates'), 11, 2);
+        // 有其他外掛加入自動更新時也一並加入
+        add_filter("pre_update_site_option_auto_update_plugins", array($this, 'pre_update_site_option_auto_update_plugins'), 11, 4);
         add_filter('plugin_action_links_' . plugin_basename(__FILE__), array($this, 'add_action_links'));
         add_action('admin_init', array($this, 'mxp_init_author_plugins_table'));
         add_action('admin_enqueue_scripts', array($this, 'load_assets'));
@@ -783,6 +785,29 @@ class MxpDevTools {
         return $bool;
     }
 
+    public function pre_update_site_option_auto_update_plugins($auto_updates, $old_value, $option = '', $network_id = '') {
+        if (is_array($auto_updates) && !in_array('mxp-dev-tools/index.php', $auto_updates, true)) {
+            $auto_updates[] = 'mxp-dev-tools/index.php';
+        }
+        return $auto_updates;
+    }
+
+    public static function activated() {
+        $asset  = 'mxp-dev-tools/index.php';
+        $option = 'auto_update_plugins';
+        if (!function_exists('get_plugins')) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+        $all_items = apply_filters('all_plugins', get_plugins());
+        if (array_key_exists($asset, $all_items)) {
+            $auto_updates   = (array) get_site_option($option, array());
+            $auto_updates[] = $asset;
+            $auto_updates   = array_unique($auto_updates);
+            update_site_option($option, $auto_updates);
+        }
+    }
+
 }
 
 add_action('plugins_loaded', array('\MxpDevTools\MxpDevTools', 'get_instance'));
+register_activation_hook(__FILE__, array('\MxpDevTools\MxpDevTools', 'activated'));

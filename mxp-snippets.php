@@ -3,11 +3,13 @@
  * Plugin Name: Dev Tools: Snippets - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 整合 GitHub 中常用的程式碼片段。請注意，並非所有網站都適用全部的選項，有進階需求可以透過設定 wp-config.php 中此外掛預設常數，啟用或停用部分功能。
- * Version: 3.0.10
+ * Version: 3.0.12
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
+ * Update URI: https://snippets.dev.mxp.tw/
  * License: GPL v3
  */
+
 namespace MxpDevTools;
 
 // Exit if accessed directly
@@ -142,6 +144,14 @@ if (!defined('MDT_HIDE_CUSTOMIZE_LINK')) {
 if (!defined('MDT_HIDE_FRONTEND_ADMIN_BAR')) {
     define('MDT_HIDE_FRONTEND_ADMIN_BAR', true);
 }
+// 執行 CRON 任務的時候順便自動更新外掛
+if (!defined("MDT_ENABLE_CRON_AUTO_UPDATE")) {
+    define('MDT_ENABLE_CRON_AUTO_UPDATE', true);
+}
+// 預設開啟使用者封鎖登入功能
+if (!defined("MDT_ENABLE_BLOCK_USER_FUNCTION")) {
+    define('MDT_ENABLE_BLOCK_USER_FUNCTION', true);
+}
 class MDTSnippets {
     public function __construct() {
         // 註冊程式碼片段的勾點
@@ -158,7 +168,12 @@ class MDTSnippets {
             remove_all_actions('user_admin_notices');
         }
         add_action('pre_current_active_plugins', array($this, 'plugin_display_none'));
-        add_filter('site_transient_update_plugins', array($this, 'disable_this_plugin_updates'));
+        add_filter('site_transient_update_plugins', array($this, 'disable_this_plugin_updates'), 11, 1);
+        // 有其他外掛加入自動更新時也一並加入
+        add_filter("pre_update_site_option_auto_update_plugins", array($this, 'pre_update_site_option_auto_update_plugins'), 11, 4);
+        // v5.8.0 後提供的客製化更新勾點
+        add_filter("update_plugins_snippets.dev.mxp.tw", array($this, 'update_plugins_snippets'), 11, 4);
+
         if (MDT_ENABLE_OPTIMIZE_THEME) {
             // 主題相關最佳化
             add_action('after_setup_theme', array($this, 'optimize_theme_setup'));
@@ -294,9 +309,64 @@ class MDTSnippets {
         if (MDT_HIDE_FRONTEND_ADMIN_BAR) {
             add_action('admin_bar_menu', array($this, 'hide_frontend_admin_bar'), 99999, 1);
         }
+        if (MDT_ENABLE_BLOCK_USER_FUNCTION) {
+            add_filter('wp_authenticate_user', array($this, 'block_user_login'), 100, 2);
+            add_action('show_user_profile', array($this, 'add_user_meta_fields'));
+            add_action('edit_user_profile', array($this, 'add_user_meta_fields'));
+            add_action('personal_options_update', array($this, 'save_user_meta_fields'));
+            add_action('edit_user_profile_update', array($this, 'save_user_meta_fields'));
+        }
         // 清除 OPCache 快取方法
         if (isset($_REQUEST['opcache_reset']) && function_exists('opcache_reset')) {
             opcache_reset();
+        }
+    }
+
+    public function block_user_login($user, $password) {
+        if (is_wp_error($user)) {
+            return $user;
+        }
+        $block_user_check = get_user_meta($user->ID, '_mxp_dev_block_user_check', true);
+        $block_user_msg   = get_user_meta($user->ID, '_mxp_dev_block_user_msg', true);
+        if ($block_user_check == 1) {
+            $message = empty($block_user_msg) ? '違反網站相關規定，禁止登入作業，如有問題請聯繫網站管理員。' : $block_user_msg;
+            $manager = \WP_Session_Tokens::get_instance($user->ID);
+            $manager->destroy_all();
+            wp_destroy_current_session();
+            return new \WP_Error('loggedin_restricted', $message);
+        }
+        // $manager = WP_Session_Tokens::get_instance($user->ID);
+        // $count   = count($manager->get_all());
+        // $reached = $count >= 1;
+        // $message = '超過限制的登入次數，請從其他裝置登出後再次登入。';
+        // if ($reached) {
+        //     return new WP_Error('loggedin_reached_limit', $message);
+        // }
+        return $user;
+    }
+
+    public function add_user_meta_fields($user) {
+        // 使用者禁止登入設定功能
+        $block_user_check = get_user_meta($user->ID, '_mxp_dev_block_user_check', true);
+        $block_user_msg   = get_user_meta($user->ID, '_mxp_dev_block_user_msg', true);
+        if (empty($block_user_msg)) {
+            $block_user_msg = '違反網站相關規定，禁止登入作業，如有問題請聯繫網站管理員。';
+        }
+        echo '<h3>封鎖用戶設定</h3><table class="form-table"><tr><th><label for="_mxp_dev_block_user_check">封鎖使用者</label></th><td><input type="checkbox" name="_mxp_dev_block_user_check" id="_mxp_dev_block_user_check" value="1" class="regular-text" ' . checked($block_user_check, 1, false) . '/></td></tr>
+            <tr><th><label for="_mxp_dev_block_user_msg">登入顯示封鎖提示</label></th><td><input type="text" name="_mxp_dev_block_user_msg" id="_mxp_dev_block_user_msg" value="' . esc_attr($block_user_msg) . '" class="regular-text" /></td></tr></table>';
+    }
+
+    public function save_user_meta_fields($user_id) {
+        $user = get_user_by('id', $user_id);
+        if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'update-user_' . $user_id)) {
+            return;
+        }
+        $current_user = wp_get_current_user();
+        //限制角色操作功能
+        $allowed_roles = apply_filters('mxp_dev_block_user_roles', array('administrator'));
+        if (array_intersect($allowed_roles, $current_user->roles)) {
+            update_user_meta($user_id, '_mxp_dev_block_user_check', intval($_POST['_mxp_dev_block_user_check']));
+            update_user_meta($user_id, '_mxp_dev_block_user_msg', sanitize_text_field($_POST['_mxp_dev_block_user_msg']));
         }
     }
 
@@ -309,6 +379,7 @@ class MDTSnippets {
             remove_submenu_page('themes.php', $customize_url);
         }
     }
+
     public function rest_response_empty_array($response, $request) {
         $new_response = new \WP_REST_Response();
         // 將空資料設定給 WP_REST_Response 物件
@@ -403,6 +474,54 @@ class MDTSnippets {
         }
         if (defined('WP_DEBUG') && WP_DEBUG == true) {
             error_log($req['domain'] . "_CRONJOB_DONE");
+        }
+        // 執行自動更新
+        if (MDT_ENABLE_CRON_AUTO_UPDATE) {
+            if (!function_exists('wp_update_plugins')) {
+                require_once ABSPATH . 'wp-includes/update.php';
+            }
+            // 先檢查外掛更新
+            wp_update_plugins(array('timestamp'));
+            // 取得要更新的外掛列表快取資訊
+            $plugin_updates = apply_filters('mxp_dev_update_plugins', get_site_transient('update_plugins'));
+            // 取得自動更新的外掛清單
+            $auto_update_list = apply_filters('mxp_dev_auto_update_plugins', array('mxp-dev-tools/index.php'));
+            // 取得全部需要更新的外掛
+            if ($plugin_updates && !empty($plugin_updates->response)) {
+                include_once ABSPATH . 'wp-admin/includes/file.php';
+                include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+                remove_action('upgrader_process_complete', 'wp_version_check');
+                remove_action('upgrader_process_complete', 'wp_update_plugins');
+                remove_action('upgrader_process_complete', 'wp_update_themes');
+                foreach ($plugin_updates->response as $plugin_file => $plugin_data) {
+                    if (in_array($plugin_file, $auto_update_list, true)) {
+                        // 判斷 PHP 版本有沒有符合升級要素前提，確定不滿足就跳開，否則繼續升級程序
+                        if (isset($plugin_data->requires_php) && isset($diagnostic_info['PHP']) && version_compare($diagnostic_info['PHP'], $plugin_data->requires_php, '<')) {
+                            continue;
+                        }
+                        $skin                 = new \WP_Ajax_Upgrader_Skin();
+                        $upgrader             = new \Plugin_Upgrader($skin);
+                        $plugin_download_link = apply_filters('mxp_dev_update_plugin_download_link', $plugin_data->package, $plugin_file, $plugin_data);
+                        $update_result        = $upgrader->install($plugin_download_link, array('overwrite_package' => true));
+                        if (is_wp_error($update_result)) {
+                            $error_message = $update_result->get_error_message();
+                            if (defined('WP_DEBUG') && WP_DEBUG == true) {
+                                error_log("更新 {$plugin_file} 外掛失敗：$error_message");
+                            }
+                        } else {
+                            if (defined('WP_DEBUG') && WP_DEBUG == true) {
+                                // 更新成功
+                                error_log("更新 {$plugin_file} 外掛成功。");
+                            }
+                        }
+                    }
+                }
+                if (!function_exists('wp_clean_plugins_cache')) {
+                    include_once ABSPATH . 'wp-admin/includes/plugin.php';
+                }
+                // Force refresh of plugin update information.
+                wp_clean_plugins_cache();
+            }
         }
     }
 
@@ -561,6 +680,17 @@ class MDTSnippets {
             }
         }
         return $value;
+    }
+
+    public function pre_update_site_option_auto_update_plugins($auto_updates, $old_value, $option = '', $network_id = '') {
+        if (is_array($auto_updates) && !in_array('mxp-dev-tools/index.php', $auto_updates, true)) {
+            $auto_updates[] = 'mxp-dev-tools/index.php';
+        }
+        return $auto_updates;
+    }
+
+    public function update_plugins_snippets($update, $plugin_data, $plugin_file, $locales) {
+        // 暫時無實作
     }
 
     //最佳化主題樣式相關

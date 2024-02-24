@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Hide Login Page - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 隱藏後台登入位置工具。啟用即更改預設登入網址為 /admin-staff/
- * Version: 3.0.10
+ * Version: 3.0.12
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -40,7 +40,9 @@ class MDTHideLoginPage {
     public function add_hooks() {
         add_filter('plugin_action_links', array($this, 'modify_action_link'), 11, 4);
         add_action('pre_current_active_plugins', array($this, 'plugin_display_none'));
-        add_filter('site_transient_update_plugins', array($this, 'disable_this_plugin_updates'));
+        add_filter('site_transient_update_plugins', array($this, 'disable_this_plugin_updates'), 11, 1);
+        // 有其他外掛加入自動更新時也一並加入
+        add_filter("pre_update_site_option_auto_update_plugins", array($this, 'pre_update_site_option_auto_update_plugins'), 11, 4);
         add_action('plugins_loaded', array($this, 'plugins_loaded_action'), 9999);
         add_action('wp_loaded', array($this, 'wp_loaded_action'));
 
@@ -88,6 +90,13 @@ class MDTHideLoginPage {
             }
         }
         return $value;
+    }
+
+    public function pre_update_site_option_auto_update_plugins($auto_updates, $old_value, $option = '', $network_id = '') {
+        if (is_array($auto_updates) && !in_array('mxp-dev-tools/index.php', $auto_updates, true)) {
+            $auto_updates[] = 'mxp-dev-tools/index.php';
+        }
+        return $auto_updates;
     }
 
     public function plugins_loaded_action() {

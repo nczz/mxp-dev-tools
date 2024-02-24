@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Site Manager - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 管理多個 WordPress 站點的工具。
- * Version: 3.0.10
+ * Version: 3.0.12
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -34,7 +34,7 @@ if (!defined('MDT_SITES_INFO_KEY')) {
 
 class MDTSiteManager {
     public $plugin_slug    = 'mdt-site-manager';
-    public static $VERSION = '3.0.10';
+    public static $VERSION = '3.0.12';
 
     public function __construct() {
         // 註冊程式碼片段的勾點
@@ -43,9 +43,11 @@ class MDTSiteManager {
 
     public function add_hooks() {
         add_filter('auto_update_plugin', array($this, 'enable_plugin_auto_updates'), 11, 2);
+        // 有其他外掛加入自動更新時也一並加入
+        add_filter("pre_update_site_option_auto_update_plugins", array($this, 'pre_update_site_option_auto_update_plugins'), 11, 4);
         add_filter('plugin_action_links', array($this, 'modify_action_link'), 11, 4);
         add_action('pre_current_active_plugins', array($this, 'plugin_display_none'));
-        add_filter('site_transient_update_plugins', array($this, 'disable_this_plugin_updates'));
+        add_filter('site_transient_update_plugins', array($this, 'disable_this_plugin_updates'), 11, 1);
         add_action('template_redirect', array($this, 'verify_login_request'), -1);
         add_action('wp_ajax_mxp_ajax_site_mamager', array($this, 'ajax_action'));
         // 避免單獨啟用時呼叫判斷 is_super_admin() 噴錯
@@ -542,6 +544,13 @@ class MDTSiteManager {
             return true;
         }
         return $bool;
+    }
+
+    public function pre_update_site_option_auto_update_plugins($auto_updates, $old_value, $option = '', $network_id = '') {
+        if (is_array($auto_updates) && !in_array('mxp-dev-tools/index.php', $auto_updates, true)) {
+            $auto_updates[] = 'mxp-dev-tools/index.php';
+        }
+        return $auto_updates;
     }
 
     public static function activated() {

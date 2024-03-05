@@ -29,7 +29,10 @@
             keys.forEach(tableKey => {
                 var str = item[tableKey];
                 if (tableKey == 'whois') {
-                    var expiration = item['whois']['data']['expiration'] !== undefined ? item['whois']['data']['expiration'] : '';
+                    var expiration = '';
+                    if (item['whois']['data'] !== undefined) {
+                        expiration = item['whois']['data']['expiration'] !== undefined ? item['whois']['data']['expiration'] : '';
+                    }
                     if (expiration != '') {
                         var date = new Date(expiration * 1000);
                         var year = date.getFullYear();
@@ -61,7 +64,10 @@
                     str += '<button type="button" class="button delete" data-site="' + key + '">刪除</button>';
                 }
                 if (tableKey == 'whois') {
-                    var expiration = item['whois']['data']['expiration'] !== undefined ? item['whois']['data']['expiration'] : '';
+                    var expiration = '';
+                    if (item['whois']['data'] !== undefined) {
+                        expiration = item['whois']['data']['expiration'] !== undefined ? item['whois']['data']['expiration'] : '';
+                    }
                     if (expiration != '') {
                         html += `<td data-order="${expiration}">${str}</td>`;
                     } else {

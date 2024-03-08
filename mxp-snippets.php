@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Snippets - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 整合 GitHub 中常用的程式碼片段。請注意，並非所有網站都適用全部的選項，有進階需求可以透過設定 wp-config.php 中此外掛預設常數，啟用或停用部分功能。
- * Version: 3.0.14
+ * Version: 3.0.16
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * Update URI: https://snippets.dev.mxp.tw/
@@ -236,11 +236,12 @@ class MDTSnippets {
         remove_action('template_redirect', 'wp_shortlink_header', 11);
         if (MDT_DISABLE_REST_INDEX) {
             // 關閉 wp-json 首頁顯示的 API 清單
-            add_filter('rest_index', array($this, 'rest_response_empty_array'), 11, 2);
+            add_filter('rest_index', array($this, 'rest_response_empty_array'), 11, 1);
         }
         // 沒登入的使用者都無法呼叫 wp/users 這隻 API。不建議完全封鎖掉，會導致有些後台功能運作失靈
         if (function_exists('is_user_logged_in') && !is_user_logged_in() && MDT_DISABLE_NO_AUTH_ACCESS_REST_USER) {
-            add_filter('rest_user_query', '__return_empty_array');
+            // 要影響 Query 結果的話這邊不能傳入空值，要改寫，但下方勾點還可以處理，先放著
+            // add_filter('rest_user_query', '__return_empty_array');
             add_filter('rest_prepare_user', '__return_empty_array');
         }
         if (MDT_HIDE_AUTHOR_LINK) {
@@ -380,7 +381,7 @@ class MDTSnippets {
         }
     }
 
-    public function rest_response_empty_array($response, $request) {
+    public function rest_response_empty_array($response) {
         $new_response = new \WP_REST_Response();
         // 將空資料設定給 WP_REST_Response 物件
         $new_response->set_data(array());

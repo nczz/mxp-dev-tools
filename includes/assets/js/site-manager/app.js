@@ -30,7 +30,7 @@
                 var str = item[tableKey];
                 if (tableKey == 'whois') {
                     var expiration = '';
-                    if (item['whois']['data'] !== undefined) {
+                    if (item['whois'] && item['whois']['data'] !== undefined) {
                         expiration = item['whois']['data']['expiration'] !== undefined ? item['whois']['data']['expiration'] : '';
                     }
                     if (expiration != '') {
@@ -65,7 +65,7 @@
                 }
                 if (tableKey == 'whois') {
                     var expiration = '';
-                    if (item['whois']['data'] !== undefined) {
+                    if (item['whois'] && item['whois']['data'] !== undefined) {
                         expiration = item['whois']['data']['expiration'] !== undefined ? item['whois']['data']['expiration'] : '';
                     }
                     if (expiration != '') {

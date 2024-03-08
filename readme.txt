@@ -5,7 +5,7 @@ Tags: Mxp.TW, 常用外掛, 開發工具箱, 敲敲設計, Themeforest, API, 批
 Requires at least: 4.6
 Requires PHP: 5.6
 Tested up to: 6.4
-Stable tag: 3.0.14
+Stable tag: 3.0.16
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,9 +78,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 == Changelog ==
 
-= 3.0.14 =
+= 3.0.16 =
 
 * 修正 Site Manager 的資料載入問題
+* 修正 Snippets REST API 的權限判斷與勾點置入問題
+* 向下相容 v4.4 版本的 REST API 勾點
 
 = 3.0.13 =
 

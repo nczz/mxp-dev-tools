@@ -7,7 +7,9 @@
 if (!defined('WP_UNINSTALL_PLUGIN')) {
     die;
 }
-
+if (defined('MDT_DISALLOW_DELETE_PLUGIN') && MDT_DISALLOW_DELETE_PLUGIN == true) {
+    exit('This plugin cannot be deleted.');
+}
 // 刪除 options 設定
 global $wpdb;
 $table        = $wpdb->options;

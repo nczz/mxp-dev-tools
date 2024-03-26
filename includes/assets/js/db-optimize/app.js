@@ -333,7 +333,7 @@
                     dataType: "json",
                     url: MXP.ajaxurl,
                     cache: false,
-                    timeout: 3000,
+                    timeout: 30000,
                     error: function(res) {
                         console.log('Error', res);
                         $(self).prop('disabled', false);

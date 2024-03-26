@@ -427,6 +427,10 @@ trait DatabaseOptimize {
                 exit;
                 break;
             case 'done':
+                if (connection_aborted()) {
+                    wp_send_json(array('success' => false, 'data' => array(), 'msg' => '請求超時，重新確認中'));
+                    exit;
+                }
                 //清除設定暫存
                 $key = $option_prefix . '%';
                 $sql = 'DELETE FROM ' . $table . ' WHERE ' . $column . ' LIKE %s';

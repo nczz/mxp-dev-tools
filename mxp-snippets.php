@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Snippets - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 整合 GitHub 中常用的程式碼片段。請注意，並非所有網站都適用全部的選項，有進階需求可以透過設定 wp-config.php 中此外掛預設常數，啟用或停用部分功能。
- * Version: 3.0.17
+ * Version: 3.0.18
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * Update URI: https://snippets.dev.mxp.tw/
@@ -151,6 +151,10 @@ if (!defined("MDT_ENABLE_CRON_AUTO_UPDATE")) {
 // 預設開啟使用者封鎖登入功能
 if (!defined("MDT_ENABLE_BLOCK_USER_FUNCTION")) {
     define('MDT_ENABLE_BLOCK_USER_FUNCTION', true);
+}
+// 預設開啟所有連線請求
+if (!defined("MDT_BLOCK_ALL_NETWORK_FUNCTION")) {
+    define('MDT_BLOCK_ALL_NETWORK_FUNCTION', false);
 }
 class MDTSnippets {
     public function __construct() {
@@ -977,17 +981,21 @@ jQuery(document).ready(function(){
     }
     // 內對外請求管制方法
     public function block_external_request($preempt, $parsed_args, $url) {
-        $block_urls = apply_filters('mxp_dev_block_urls', array());
-        $block_urls = array_map('strtolower', $block_urls);
-        $allow_urls = apply_filters('mxp_dev_allow_urls', array(
-            "api.wordpress.org",
-            "downloads.wordpress.org",
-        ));
-        $allow_urls     = array_map('strtolower', $allow_urls);
+        $domains = array();
+        if (MDT_BLOCK_ALL_NETWORK_FUNCTION) {
+            $domains[0] = '*';
+        }
+        $block_urls     = apply_filters('mxp_dev_block_urls', $domains);
+        $block_urls     = array_map('strtolower', $block_urls);
         $localhost      = strtolower(parse_url(get_home_url(), PHP_URL_HOST));
+        $allow_urls     = array();
         $allow_urls[]   = $localhost;
         $allow_urls[]   = 'localhost';
         $allow_urls[]   = '127.0.0.1';
+        $allow_urls[]   = 'api.wordpress.org';
+        $allow_urls[]   = 'downloads.wordpress.org';
+        $allow_urls     = apply_filters('mxp_dev_allow_urls', $allow_urls);
+        $allow_urls     = array_map('strtolower', $allow_urls);
         $request_domain = strtolower(parse_url($url, PHP_URL_HOST));
         if (count($block_urls) == 1 && $block_urls[0] == '*') {
             if (!in_array($request_domain, $allow_urls, true)) {

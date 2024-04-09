@@ -1078,6 +1078,9 @@ trait DatabaseOptimize {
         if (!isset($_REQUEST['nonce']) || !wp_verify_nonce($_REQUEST['nonce'], 'mxp-ajax-nonce-for-db-optimize') || !is_super_admin()) {
             wp_send_json_error('請求驗證有誤！');
         }
+        global $wp_filter;
+        // 清空當前註冊的所有事件，避免影響後續的重置作業
+        $wp_filter          = [];
         $del_uploads        = false;
         $clean_all_tables   = true;
         $keep_options_reset = true;
@@ -1169,7 +1172,7 @@ trait DatabaseOptimize {
             $result['password'] = $password; //空的
         }
         // 重新啟用工具箱外掛
-        @activate_plugin(plugin_basename(__FILE__));
+        @activate_plugin('mxp-dev-tools/index.php');
         // 重新把設定存回去
         foreach ($oldsite_options as $option => $value) {
             if ($keep_options_reset) {

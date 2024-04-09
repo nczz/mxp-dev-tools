@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Site Manager - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 管理多個 WordPress 站點的工具。
- * Version: 3.0.18
+ * Version: 3.0.2
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -34,7 +34,7 @@ if (!defined('MDT_SITES_INFO_KEY')) {
 
 class MDTSiteManager {
     public $plugin_slug    = 'mdt-site-manager';
-    public static $VERSION = '3.0.18';
+    public static $VERSION = '3.0.2';
 
     public function __construct() {
         // 註冊程式碼片段的勾點

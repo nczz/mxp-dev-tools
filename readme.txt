@@ -1,11 +1,11 @@
 === 一介資男(Mxp.TW) 開發工具箱 ===
 Contributors: mxp
 Donate link: https://mxp.tw/jT
-Tags: Mxp.TW, Tools, Development, Snippets, Reset, DB optimize
+Tags: Mxp.TW, Tools, Development, Snippets, Reset, Optimiztion
 Requires at least: 4.6
 Requires PHP: 5.6
 Tested up to: 6.5
-Stable tag: 3.0.2
+Stable tag: 3.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,7 +78,7 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 == Changelog ==
 
-= 3.0.2 =
+= 3.1.0 =
 
 * 修正工具箱中重置網站的功能會被其他外掛影響的錯誤
 

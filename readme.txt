@@ -5,7 +5,7 @@ Tags: Mxp.TW, Tools, Development, Snippets, Reset, Optimiztion
 Requires at least: 4.6
 Requires PHP: 5.6
 Tested up to: 6.5
-Stable tag: 3.1.0
+Stable tag: 3.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -77,6 +77,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 可以透過網站的[聯絡我](https://www.mxp.tw/contact/)，跟我說！
 
 == Changelog ==
+
+= 3.1.1 =
+
+* 新增 Snipets 中預設把特殊管理權限的使用者隱藏
+* 關閉 作者外掛列表 頁籤
 
 = 3.1.0 =
 

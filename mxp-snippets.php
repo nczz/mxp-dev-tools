@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools: Snippets - Mxp.TW
  * Plugin URI: https://tw.wordpress.org/plugins/mxp-dev-tools/
  * Description: 整合 GitHub 中常用的程式碼片段。請注意，並非所有網站都適用全部的選項，有進階需求可以透過設定 wp-config.php 中此外掛預設常數，啟用或停用部分功能。
- * Version: 3.1.0
+ * Version: 3.1.1
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * Update URI: https://snippets.dev.mxp.tw/
@@ -324,6 +324,11 @@ class MDTSnippets {
         // 清除 OPCache 快取方法
         if (isset($_REQUEST['opcache_reset']) && function_exists('opcache_reset')) {
             opcache_reset();
+        }
+        if (defined('MDT_DISALLOW_FILE_MODS_ADMINS') && is_array(MDT_DISALLOW_FILE_MODS_ADMINS)) {
+            add_filter('users_list_table_query_args', array($this, 'filter_user_query_qrgs'), 99999, 1);
+            add_filter('map_meta_cap', array($this, 'restrict_user_editing'), 99999, 4);
+            add_filter('pre_count_users', array($this, 'filter_user_counts'), 99999, 3);
         }
     }
 
@@ -1062,6 +1067,103 @@ jQuery(document).ready(function(){
             return basename($plugin_path);
         }
         return array("Name" => $plugin_data['Name'], "Version" => $plugin_data['Version'], "Author" => strip_tags($plugin_data['AuthorName']));
+    }
+
+    public function filter_user_query_qrgs($args) {
+        //Exclude superusers if the current user is not a superuser.
+        $super_users = MDT_DISALLOW_FILE_MODS_ADMINS;
+        if (empty($super_users)) {
+            return $args;
+        }
+
+        if (!in_array(get_current_user_id(), MDT_DISALLOW_FILE_MODS_ADMINS)) {
+            $args['exclude'] = array_merge(
+                isset($args['exclude']) ? $args['exclude'] : array(),
+                $super_users
+            );
+
+            //Exclude hidden users even if specifically included. This can happen
+            //when looking at the "None" view on the "Users" page (this view shows
+            //users that have no role on the current site).
+            if (isset($args['include']) && !empty($args['include'])) {
+                $args['include'] = array_diff($args['include'], $super_users);
+                if (empty($args['include'])) {
+                    unset($args['include']);
+                }
+            }
+        }
+
+        return $args;
+    }
+
+    public function restrict_user_editing($required_caps, $capability, $this_user_id, $args) {
+        static $edit_user_caps = array('edit_user', 'delete_user', 'promote_user', 'remove_user');
+        if (!in_array($capability, $edit_user_caps) || !isset($args[0])) {
+            return $required_caps;
+        }
+
+        /** @var int The user that might be edited or deleted. */
+        $that_user_id = intval($args[0]);
+        $this_user_id = intval($this_user_id);
+
+        if (in_array($that_user_id, MDT_DISALLOW_FILE_MODS_ADMINS) && !in_array($this_user_id, MDT_DISALLOW_FILE_MODS_ADMINS)) {
+            return array_merge($required_caps, array('do_not_allow'));
+        }
+
+        return $required_caps;
+    }
+
+    public function filter_user_counts($result = null, $strategy = 'time', $site_id = null) {
+        // 避免無限重複執行導致記憶體被吃光的問題
+        remove_filter('pre_count_users', array($this, 'filter_user_counts'), 99999, 3);
+
+        //Perform this filtering only on the "Users" page.
+        if (!isset($GLOBALS['parent_file']) || ($GLOBALS['parent_file'] !== 'users.php')) {
+            return $result;
+        }
+
+        if (in_array(get_current_user_id(), MDT_DISALLOW_FILE_MODS_ADMINS)) {
+            //This user can see other hidden users.
+            return $result;
+        }
+
+        $super_users = array();
+        foreach (MDT_DISALLOW_FILE_MODS_ADMINS as $index => $user_id) {
+            $user_obj = get_user_by('id', $user_id);
+            if ($user_obj) {
+                $super_users[] = $user_obj;
+            }
+        }
+        //Note the $site_id. We want the roles that each user has on the specified site.
+        //This should normally be the current site, but it doesn't have to be.
+
+        if (empty($super_users)) {
+            //There are no users that need to be hidden.
+            return $result;
+        }
+
+        $result = count_users($strategy, $site_id);
+
+        //Adjust the total number of users.
+        $result['total_users'] -= count($super_users);
+
+        //For each hidden user, subtract one from each of the roles that the user has.
+        foreach ($super_users as $user) {
+            if (!empty($user->roles) && is_array($user->roles)) {
+                foreach ($user->roles as $roleId) {
+                    if (isset($result['avail_roles'][$roleId])) {
+                        $result['avail_roles'][$roleId]--;
+                        if ($result['avail_roles'][$roleId] <= 0) {
+                            unset($result['avail_roles'][$roleId]);
+                        }
+                    }
+                }
+            } else if (isset($result['avail_roles']['none'])) {
+                $result['avail_roles']['none']--;
+            }
+        }
+
+        return $result;
     }
 
     public function wp_diagnostic_info() {

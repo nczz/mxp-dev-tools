@@ -3,7 +3,7 @@
  * Plugin Name: Dev Tools - Mxp.TW
  * Plugin URI: https://goo.gl/2gLq18
  * Description: 一介資男の常用外掛整理與常用開發功能整合外掛。
- * Version: 3.1.0
+ * Version: 3.1.1
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -25,7 +25,7 @@ class MxpDevTools {
     use DatabaseOptimize;
     use SearchReplace;
     use Utility;
-    static $VERSION                   = '3.1.0';
+    static $VERSION                   = '3.1.1';
     private $themeforest_api_base_url = 'https://api.envato.com/v3';
     protected static $instance        = null;
     public $plugin_slug               = 'mxp_wp_dev_tools';
@@ -85,7 +85,7 @@ class MxpDevTools {
         add_menu_page('Mxp.TW 開發常用工具箱', '開發工具箱', 'administrator', $this->plugin_slug, array($this, 'main_page_cb'), 'dashicons-admin-generic');
         add_submenu_page($this->plugin_slug, 'Themeforest List', 'Themeforest List', 'administrator', 'mxp-themeforest-list', array($this, 'themeforest_page_cb'));
         add_submenu_page($this->plugin_slug, '調整內容作者工具', '調整內容作者工具', 'administrator', 'mxp-change-post-owner', array($this, 'changepostowner_page_cb'));
-        add_submenu_page($this->plugin_slug, '作者外掛列表', '作者外掛列表', 'administrator', 'mxp-author-plugins', array($this, 'listauthorplugin_page_cb'));
+        // add_submenu_page($this->plugin_slug, '作者外掛列表', '作者外掛列表', 'administrator', 'mxp-author-plugins', array($this, 'listauthorplugin_page_cb'));
         add_submenu_page($this->plugin_slug, '外掛搜尋工具', '外掛搜尋工具', 'administrator', 'mxp-search-plugins', array($this, 'searchplugin_page_cb'));
         add_submenu_page($this->plugin_slug, '主題打包工具', '主題打包工具', 'administrator', 'mxp-theme-archive', array($this, 'themearchive_page_cb'));
         add_submenu_page($this->plugin_slug, '查看網站各項設定', '查看網站各項設定', 'administrator', 'mxp-get-wp-config', array($this, 'getwpconfig_page_cb'));

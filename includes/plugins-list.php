@@ -269,7 +269,8 @@ trait PluginsList {
                 exit($path . ' 檔案不存在。');
             }
             $zip_file_name = basename($path) . '.zip';
-            $zip_file_path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $zip_file_name;
+            $tmp_dir       = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+            $zip_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $zip_file_name;
             $zip->open($zip_file_path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
             if (!$zip) {
                 exit('ZIP 壓縮程式執行錯誤');
@@ -282,7 +283,8 @@ trait PluginsList {
             $split_path    = explode(DIRECTORY_SEPARATOR, $path);
             $zip_file_name = $split_path[count($split_path) - 2] . '.zip';
             $relative_path = realpath(dirname($path) . '/..'); //for support php5.3 up | dirname($path, 2) php7.0 up;
-            $zip_file_path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $zip_file_name;
+            $tmp_dir       = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+            $zip_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $zip_file_name;
             $zip->open($zip_file_path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
             if (!$zip) {
                 exit('ZIP 壓縮程式執行錯誤');

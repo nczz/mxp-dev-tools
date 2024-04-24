@@ -26,9 +26,10 @@ trait DatabaseOptimize {
         $export_table    = sanitize_text_field($_REQUEST['table']);
         global $wpdb;
         $sql_name      = $export_database . '-' . $export_table . '-' . date('Y-m-d-H-i-s') . '.sql';
-        $sql_full_path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $sql_name;
+        $tmp_dir       = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+        $sql_full_path = $tmp_dir . DIRECTORY_SEPARATOR . $sql_name;
         $zip_file_name = $sql_name . '.zip';
-        $zip_file_path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $zip_file_name;
+        $zip_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $zip_file_name;
         // error_log($sql_full_path);
         $fp = fopen($sql_full_path, 'w');
         fwrite($fp, '-- MXP MySQL Dump' . PHP_EOL);
@@ -168,7 +169,8 @@ trait DatabaseOptimize {
         if (file_exists($sql_full_path)) {
             $zip           = new \ZipArchive();
             $zip_file_name = $sql_name . '.zip';
-            $zip_file_path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $zip_file_name;
+            $tmp_dir       = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+            $zip_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $zip_file_name;
             $zip->open($zip_file_path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
             if ($zip) {
                 $zip->addFile($sql_full_path, $export_database . '-' . $export_table . "/" . $sql_name);
@@ -233,7 +235,8 @@ trait DatabaseOptimize {
         global $wpdb, $option_prefix, $dump_file_name, $dump_file_path, $database;
         $database       = sanitize_text_field($_REQUEST['database']);
         $dump_file_name = $database . '-' . date('Y-m-d-H-i-s') . '.sql';
-        $dump_file_path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $dump_file_name;
+        $tmp_dir        = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+        $dump_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $dump_file_name;
         $table          = $wpdb->options;
         $column         = 'option_name';
         $key_column     = 'option_id';
@@ -487,7 +490,7 @@ trait DatabaseOptimize {
                 exit;
                 break;
             case 'error':
-                wp_send_json(array('success' => false, 'data' => array('progress' => $check['progress'], 'dump_file_name' => $dump_file_name, 'dump_file_path' => $dump_file_path), 'msg' => '發生錯誤，匯出作業中斷'));
+                wp_send_json(array('success' => false, 'data' => array('progress' => $check['progress'], 'dump_file_name' => $dump_file_name, 'dump_file_path' => $dump_file_path), 'msg' => '發生錯誤，匯出發生錯誤作業中斷'));
                 exit;
                 break;
             default:
@@ -619,7 +622,8 @@ trait DatabaseOptimize {
             $split_path       = explode(DIRECTORY_SEPARATOR, $path);
             $zip_file_name    = $split_path[count($split_path) - 2] . '.zip';
             $relative_path    = realpath(dirname($path) . '/..'); //for support php5.3 up | dirname($path, 2) php7.0 up;
-            $zip_file_path    = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $zip_file_name;
+            $tmp_dir          = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+            $zip_file_path    = $tmp_dir . DIRECTORY_SEPARATOR . $zip_file_name;
             //清除當前打包檔案
             if (file_exists($zip_file_path)) {
                 unlink($zip_file_path);
@@ -1016,7 +1020,8 @@ trait DatabaseOptimize {
             }
             closedir($folder);
         }
-        $directory = sys_get_temp_dir() . DIRECTORY_SEPARATOR;
+        $tmp_dir   = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+        $directory = $tmp_dir . DIRECTORY_SEPARATOR;
         $files     = scandir($directory);
         foreach ($files as $file) {
             // 忽略 "." 和 ".." 這兩個特殊目錄

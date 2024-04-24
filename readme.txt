@@ -5,7 +5,7 @@ Tags: Mxp.TW, Tools, Development, Snippets, Reset, Optimiztion
 Requires at least: 4.6
 Requires PHP: 5.6
 Tested up to: 6.5
-Stable tag: 3.1.2
+Stable tag: 3.1.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,9 +78,10 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 == Changelog ==
 
-= 3.1.2 =
+= 3.1.3 =
 
 * 修正打包暫存目錄使用的 sys_get_temp_dir() 方法
+* 增加在 LANMP 架構下的打包相容性
 
 = 3.1.1 =
 

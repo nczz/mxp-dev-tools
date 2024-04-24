@@ -337,15 +337,22 @@ trait DatabaseOptimize {
                 ob_end_flush();
                 ob_get_length() && ob_flush();
                 flush();
-                ob_end_clean();
+                if (ob_get_length() > 0) {
+                    ob_end_clean();
+                }
                 if (function_exists('apache_response_headers')) {
                     $headers = apache_response_headers();
                     // header('Connection: close\r\n');
                     if (isset($headers['Content-Length'])) {
                         // header('Content-Length: ' . $headers['Content-Length'] . "\r\n");
                     }
-                    ob_end_flush();
+                    if (ob_get_level() > 0) {
+                        ob_end_flush();
+                    }
                     flush();
+                }
+                if (function_exists('fastcgi_finish_request')) {
+                    fastcgi_finish_request();
                 }
                 break;
             }
@@ -598,14 +605,22 @@ trait DatabaseOptimize {
                 ob_end_flush();
                 ob_get_length() && ob_flush();
                 flush();
-                ob_end_clean();
+                if (ob_get_length() > 0) {
+                    ob_end_clean();
+                }
                 if (function_exists('apache_response_headers')) {
                     $headers = apache_response_headers();
+                    // header('Connection: close\r\n');
                     if (isset($headers['Content-Length'])) {
-                        // do nothing!
+                        // header('Content-Length: ' . $headers['Content-Length'] . "\r\n");
                     }
-                    ob_end_flush();
+                    if (ob_get_level() > 0) {
+                        ob_end_flush();
+                    }
                     flush();
+                }
+                if (function_exists('fastcgi_finish_request')) {
+                    fastcgi_finish_request();
                 }
                 break;
             }

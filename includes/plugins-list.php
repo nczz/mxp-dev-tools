@@ -270,6 +270,9 @@ trait PluginsList {
             }
             $zip_file_name = basename($path) . '.zip';
             $tmp_dir       = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+            if (defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') {
+                $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
+            }
             $zip_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $zip_file_name;
             $zip->open($zip_file_path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
             if (!$zip) {
@@ -284,6 +287,9 @@ trait PluginsList {
             $zip_file_name = $split_path[count($split_path) - 2] . '.zip';
             $relative_path = realpath(dirname($path) . '/..'); //for support php5.3 up | dirname($path, 2) php7.0 up;
             $tmp_dir       = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+            if (defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') {
+                $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
+            }
             $zip_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $zip_file_name;
             $zip->open($zip_file_path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
             if (!$zip) {

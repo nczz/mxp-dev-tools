@@ -368,6 +368,162 @@
         var batch_list = [];
         var zip_file_name = '';
         var zip_file_path = '';
+        $('.pack_wp_content_batch_mode').click(function() {
+            if (MXP.background_process != '0' && wait_lock == 0) {
+                if (confirm('背景打包執行中，如要繼續將會中斷前次操作，確定嗎？') == false) {
+                    return;
+                }
+            }
+            $('.cleanup_mxpdev').prop('disabled', true);
+            var self = this;
+            $('button').prop('disabled', true);
+            $(self).text('準備中...');
+            if (wait_lock == 0) {
+                var ajax_options = {
+                    method: "POST",
+                    dataType: "json",
+                    url: MXP.ajaxurl,
+                    cache: false,
+                    error: function(res) {
+                        console.log('Error', res);
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            console.log('success', res.msg);
+                            wait_lock += 1;
+                            $(self).prop('disabled', false);
+                            $(self).trigger('click');
+                        } else {
+                            console.log('error', res);
+                            $(self).text(res.msg);
+                        }
+                    },
+                    data: {
+                        'action': 'mxp_background_pack_batch_mode',
+                        'step': 0,
+                        'nonce': $(this).data('nonce'),
+                        'path': $(this).data('path'),
+                        'type': 'folder',
+                        'context': 'wp-content',
+                        'exclude_path': $(this).data('exclude_path')
+                    }
+                };
+                $.ajaxQueue.addRequest(ajax_options);
+            }
+            if (wait_lock == 1) {
+                var ajax_options = {
+                    method: "POST",
+                    dataType: "json",
+                    url: MXP.ajaxurl,
+                    cache: false,
+                    error: function(res) {
+                        console.log('Error', res);
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            console.log('success', res.msg);
+                            wait_lock += 1;
+                            batch_list = res.data['option_keys'];
+                            console.log(batch_list);
+                            zip_file_name = res.data['zip_file_name'];
+                            zip_file_path = res.data['zip_file_path'];
+                            $(self).text('準備就緒，點此開始打包檔案');
+                            $(self).prop('disabled', false);
+                            $(self).trigger('click');
+                        } else {
+                            console.log('error', res);
+                            $(self).text(res.msg);
+                            $(self).prop('disabled', false);
+                            $(self).trigger('click');
+                        }
+                    },
+                    data: {
+                        'action': 'mxp_background_pack_batch_mode',
+                        'step': 1,
+                        'nonce': $(this).data('nonce'),
+                        'path': $(this).data('path'),
+                        'type': 'folder',
+                        'context': 'wp-content',
+                        'exclude_path': $(this).data('exclude_path')
+                    }
+                };
+                $.ajaxQueue.addRequest(ajax_options);
+            }
+            if (wait_lock == 2) {
+                for (var i = 0; i < batch_list.length; i++) {
+                    if (batch_list[i]) {
+                        option_key = batch_list[i];
+                    }
+                    var ajax_options = {
+                        method: "POST",
+                        dataType: "json",
+                        url: MXP.ajaxurl,
+                        cache: false,
+                        error: function(res) {
+                            console.log('Error', res);
+                        },
+                        success: function(res) {
+                            if (res.success) {
+                                console.log('success', res.msg);
+                                if (res.data[0] == res.data[1]) {
+                                    $(self).prop('disabled', false);
+                                    $(self).text('點此下載檔案');
+                                    wait_lock += 1;
+                                    $(self).trigger('click');
+                                } else {
+                                    $(self).prop('disabled', true);
+                                    $(self).text('壓縮進度：' + Math.round((res.data[0] / res.data[1]) * 100) + '% （請勿關閉此頁面）');
+                                }
+                            } else {
+                                console.log('success', res);
+                                $(self).text(res.msg);
+                            }
+                        },
+                        data: {
+                            'action': 'mxp_background_pack_batch_mode',
+                            'step': 2,
+                            'zip_file_name': zip_file_name,
+                            'zip_file_path': zip_file_path,
+                            'option_key': option_key,
+                            'nonce': $(this).data('nonce'),
+                            'path': $(this).data('path'),
+                            'type': 'folder',
+                            'context': 'wp-content',
+                            'exclude_path': $(this).data('exclude_path')
+                        }
+                    };
+                    $.ajaxQueue.addRequest(ajax_options);
+                }
+            }
+            if (wait_lock == 3) {
+                var ajax_options = {
+                    method: "POST",
+                    dataType: "json",
+                    url: MXP.ajaxurl,
+                    cache: false,
+                    error: function(res) {
+                        console.log('Error', res);
+                    },
+                    success: function(res) {
+                        console.log('Success', res);
+                        $(self).text('下載中！( ' + res.data['filesize'] + ' MB)');
+                        location.href = res.data['download_link'];
+                    },
+                    data: {
+                        'action': 'mxp_background_pack_batch_mode',
+                        'step': 3,
+                        'zip_file_name': zip_file_name,
+                        'zip_file_path': zip_file_path,
+                        'nonce': $(this).data('nonce'),
+                        'path': $(this).data('path'),
+                        'type': 'folder',
+                        'context': 'wp-content',
+                        'exclude_path': $(this).data('exclude_path')
+                    }
+                };
+                $.ajaxQueue.addRequest(ajax_options);
+            }
+        });
         $('.pack_wp_content').click(function() {
             if (MXP.background_process != '0' && wait_lock == 0) {
                 if (confirm('背景打包執行中，如要繼續將會中斷前次操作，確定嗎？') == false) {
@@ -376,7 +532,7 @@
             }
             $('.cleanup_mxpdev').prop('disabled', true);
             var self = this;
-            $('.pack_wp_content').prop('disabled', true);
+            $('button').prop('disabled', true);
             $(self).text('準備中...');
             if (wait_lock == 0) {
                 var ajax_options = {

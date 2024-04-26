@@ -5,10 +5,6 @@ if (!defined('WPINC')) {
     die;
 }
 
-if (!defined('MDT_PACK_LARGE_SPLIT_NUM')) {
-    define('MDT_PACK_LARGE_SPLIT_NUM', 50);
-}
-
 trait DatabaseOptimize {
     public function mxp_ajax_mysqldump() {
         set_time_limit(0);
@@ -25,8 +21,11 @@ trait DatabaseOptimize {
         $export_database = sanitize_text_field($_REQUEST['database']);
         $export_table    = sanitize_text_field($_REQUEST['table']);
         global $wpdb;
-        $sql_name      = $export_database . '-' . $export_table . '-' . date('Y-m-d-H-i-s') . '.sql';
-        $tmp_dir       = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+        $sql_name = $export_database . '-' . $export_table . '-' . date('Y-m-d-H-i-s') . '.sql';
+        $tmp_dir  = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+        if (defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') {
+            $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
+        }
         $sql_full_path = $tmp_dir . DIRECTORY_SEPARATOR . $sql_name;
         $zip_file_name = $sql_name . '.zip';
         $zip_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $zip_file_name;
@@ -170,6 +169,9 @@ trait DatabaseOptimize {
             $zip           = new \ZipArchive();
             $zip_file_name = $sql_name . '.zip';
             $tmp_dir       = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+            if (defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') {
+                $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
+            }
             $zip_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $zip_file_name;
             $zip->open($zip_file_path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
             if ($zip) {
@@ -236,6 +238,9 @@ trait DatabaseOptimize {
         $database       = sanitize_text_field($_REQUEST['database']);
         $dump_file_name = $database . '-' . date('Y-m-d-H-i-s') . '.sql';
         $tmp_dir        = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+        if (defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') {
+            $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
+        }
         $dump_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $dump_file_name;
         $table          = $wpdb->options;
         $column         = 'option_name';
@@ -511,6 +516,394 @@ trait DatabaseOptimize {
         exit;
     }
 
+    public function mxp_ajax_background_pack_action_batch_mode() {
+        if (!is_super_admin()) {
+            echo json_encode(array('success' => false, 'data' => array(), 'msg' => '此功能僅限網站最高權限管理人員使用！'));
+            exit;
+        }
+        $step = sanitize_text_field($_REQUEST['step']);
+        if ($step == '') {
+            echo json_encode(array('success' => false, 'data' => array(), 'msg' => '缺少 step 階段的參數'));
+            exit;
+        }
+        //準備資料表資訊
+        global $wpdb;
+        $table        = $wpdb->options;
+        $column       = 'option_name';
+        $key_column   = 'option_id';
+        $value_column = 'option_value';
+
+        if (is_multisite()) {
+            $table        = $wpdb->sitemeta;
+            $column       = 'meta_key';
+            $key_column   = 'meta_id';
+            $value_column = 'meta_value';
+        }
+        $option_prefix      = 'mxp_dev_zipfile_';
+        $step_0_option_name = 'mxp_dev_packfile_step0';
+        //第一階段先取得所有要打包的檔案資訊
+        if ($step == 0) {
+            $path         = sanitize_text_field($_REQUEST['path']);
+            $type         = sanitize_text_field($_REQUEST['type']);
+            $context      = sanitize_text_field($_REQUEST['context']);
+            $exclude_path = sanitize_text_field($_REQUEST['exclude_path']);
+            //僅接受資料夾格式的打包
+            if (empty($path) || empty($type) || !in_array($type, array('folder'), true) || empty($context) || !wp_verify_nonce($_REQUEST['nonce'], 'mxp-download-current-plugins-' . $path)) {
+                echo json_encode(array('success' => false, 'data' => array(), 'msg' => '驗證請求失敗，請再試一次。'));
+                exit;
+            }
+            $path = base64_decode($path, true);
+            if ($path == false) {
+                echo json_encode(array('success' => false, 'data' => array(), 'msg' => '路徑驗證請求失敗，請再試一次。'));
+                exit;
+            }
+            if (!empty($exclude_path)) {
+                $exclude_path = base64_decode($exclude_path, true);
+                if ($exclude_path == false) {
+                    echo json_encode(array('success' => false, 'data' => array(), 'msg' => '排除路徑驗證請求失敗，請再試一次。'));
+                    exit;
+                }
+            }
+            set_time_limit(0);
+            ini_set("memory_limit", "-1");
+            //準備中斷連線背景處理
+            $detect = "NONE";
+            $server = $_SERVER['SERVER_SOFTWARE'];
+            if (preg_match('/nginx/i', $server)) {
+                $detect = "METHOD_A";
+            } else if (preg_match('/apache/i', $server)) {
+                $detect = "METHOD_B";
+            } else {
+                $detect = "WTF";
+            }
+            ignore_user_abort(true);
+            switch ($detect) {
+            case 'METHOD_A':
+                ob_end_clean();
+                header("Connection: close\r\n");
+                ob_start();
+                echo json_encode(array('success' => true, 'data' => array('step' => 0), 'msg' => '準備打包資料中，請稍候。'));
+                $size = ob_get_length();
+                header("Content-Length: $size\r\n");
+                header("Content-Encoding: application/json\r\n");
+                header("HTTP/1.1 200 OK\r\n");
+                ob_end_flush();
+                ob_get_length() && ob_flush();
+                flush();
+                if (function_exists('fastcgi_finish_request')) {
+                    fastcgi_finish_request();
+                }
+                break;
+            case 'METHOD_B':
+            case 'WTF':
+            default:
+                ob_end_clean();
+                header("Connection: close\r\n");
+                ob_start();
+                echo json_encode(array('success' => true, 'data' => array('step' => 0), 'msg' => '準備打包資料中，請稍候。'));
+                $size = ob_get_length();
+                header("Content-Length: $size\r\n");
+                header("Content-Encoding: application/json\r\n");
+                header("HTTP/1.1 200 OK\r\n");
+                ob_end_flush();
+                ob_get_length() && ob_flush();
+                flush();
+                if (ob_get_length() > 0) {
+                    ob_end_clean();
+                }
+                if (function_exists('apache_response_headers')) {
+                    $headers = apache_response_headers();
+                    // header('Connection: close\r\n');
+                    if (isset($headers['Content-Length'])) {
+                        // header('Content-Length: ' . $headers['Content-Length'] . "\r\n");
+                    }
+                    if (ob_get_level() > 0) {
+                        ob_end_flush();
+                    }
+                    flush();
+                }
+                if (function_exists('fastcgi_finish_request')) {
+                    fastcgi_finish_request();
+                }
+                break;
+            }
+            session_write_close();
+            $files = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator(dirname($path)),
+                \RecursiveIteratorIterator::LEAVES_ONLY
+            );
+            $batch_array      = [];
+            $it_count         = 0;
+            $total_file_count = iterator_count($files);
+            $zip_file_name    = '';
+            $zip_file_path    = '';
+            $split_path       = explode(DIRECTORY_SEPARATOR, $path);
+            $zip_file_name    = $split_path[count($split_path) - 2] . '.zip';
+            $relative_path    = realpath(dirname($path) . '/..'); //for support php5.3 up | dirname($path, 2) php7.0 up;
+            $tmp_dir          = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+            if (defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') {
+                $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
+            }
+            $zip_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $zip_file_name;
+            //清除當前打包檔案
+            if (file_exists($zip_file_path)) {
+                unlink($zip_file_path);
+            }
+            //先清除原本的 options 紀錄
+            $key = $option_prefix . $zip_file_name . '_%';
+            $sql = 'DELETE FROM ' . $table . ' WHERE ' . $column . ' LIKE %s';
+            $del = $wpdb->query($wpdb->prepare($sql, $key));
+            if ($del === false) {
+                // echo json_encode(array('success' => false, 'data' => array(), 'msg' => '清除資料庫中 options 失敗，請再試一次。'));
+                update_site_option($step_0_option_name, array('success' => false, 'data' => array(), 'msg' => '清除資料庫中 options 失敗，請再試一次。'));
+                exit;
+            }
+            $wp_content_dir = str_replace('/', DIRECTORY_SEPARATOR, WP_CONTENT_DIR);
+            $mxpdev_folder  = $wp_content_dir . str_replace('/', DIRECTORY_SEPARATOR, '/uploads/MXPDEV/');
+            // 清除超連結目錄中的檔案
+            if (is_dir($mxpdev_folder)) {
+                $folder = opendir($mxpdev_folder);
+                // 逐一讀取資料夾內的檔案
+                while (($file = readdir($folder)) !== false) {
+                    // 忽略 "." 和 ".." 這兩個特殊目錄
+                    if ($file !== '.' && $file !== '..') {
+                        $filePath = $mxpdev_folder . $file;
+                        // 刪除檔案
+                        unlink($filePath);
+                    }
+                }
+                // 關閉資料夾處理器
+                closedir($folder);
+            }
+            $zip = new \ZipArchive();
+            $zip->open($zip_file_path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+            if (!$zip) {
+                update_site_option($step_0_option_name, array('success' => false, 'data' => array(), 'msg' => 'ZIP壓縮程式執行錯誤'));
+                exit;
+            }
+            $zip->addFromString('readme.txt', 'Created by Chun. https://tw.wordpress.org/plugins/mxp-dev-tools/');
+            $zip->close();
+            $split_num   = MDT_PACK_LARGE_SPLIT_NUM;
+            $save_times  = 0;
+            $option_keys = [];
+            $add_flag    = true;
+            foreach ($files as $index => $file) {
+                if (!$file->isDir()) {
+                    $file_path = $file->getRealPath();
+                    $add_flag  = true;
+                    if ($exclude_path != '' && strpos($file_path, $exclude_path) !== false) {
+                        $add_flag = false;
+                    }
+                    $zip_relative_path = str_replace($relative_path . DIRECTORY_SEPARATOR, '', $file_path);
+                    // 預設就排除打包進去的資料夾（快取、備份類型）
+                    $default_exclude_dirs = apply_filters(
+                        'mxp_dev_default_exclude_dirs',
+                        array(
+                            'wp-content/uploads/MXPDEV',
+                            'wp-content/uploads/backwpup',
+                            'wp-content/uploads/backup',
+                            'wp-content/backup',
+                            'wp-content/cache',
+                            'wp-content/wpvivid',
+                            'wp-content/wpvivid_image_optimization',
+                            'wp-content/wpvivid_staging',
+                            'wp-content/wpvivid_uploads',
+                            'wp-content/wpvividbackups',
+                            'wp-content/ai1wm-backups',
+                            'wp-content/updraft',
+                            'wp-content/backups-dup',
+                            'wp-content/backup-migration',
+                            'wp-content/backuply',
+                            'wp-content/plugins/akeebabackupwp',
+                        )
+                    );
+                    $default_exclude_dirs = array_map(function ($path) {
+                        return str_replace('/', DIRECTORY_SEPARATOR, $path);
+                    }, $default_exclude_dirs);
+                    if (!empty($default_exclude_dirs)) {
+                        foreach ($default_exclude_dirs as $default_exclude_dir) {
+                            if (strpos($zip_relative_path, $default_exclude_dir) === 0) {
+                                $add_flag = false;
+                                break;
+                            }
+                        }
+                    }
+                    if ($add_flag && $file_path != '' && $zip_relative_path != '') {
+                        //批次打包
+                        $batch_array[] = array($file_path, $zip_relative_path, $it_count);
+                        if (count($batch_array) == $split_num) {
+                            $item = array(
+                                'zip_file_name' => $zip_file_name,
+                                'zip_file_path' => $zip_file_path,
+                                'file_paths'    => $batch_array,
+                                'status'        => 'addfile',
+                            );
+                            $key        = $option_prefix . $zip_file_name . '_%';
+                            $sql        = 'SELECT count(*) FROM ' . $table . ' WHERE ' . $column . ' LIKE %s';
+                            $save_times = $wpdb->get_var($wpdb->prepare($sql, $key));
+                            update_site_option($option_prefix . $zip_file_name . '_' . $save_times, $item);
+                            $option_keys[] = $option_prefix . $zip_file_name . '_' . $save_times;
+                            $save_times += 1;
+                            $batch_array = []; //清空
+                        }
+                    }
+                }
+                if ($add_flag) {
+                    $it_count += 1;
+                }
+            }
+            if (!empty($batch_array)) {
+                // 剩下就用這個送
+                $item = array(
+                    'zip_file_name' => $zip_file_name,
+                    'zip_file_path' => $zip_file_path,
+                    'file_paths'    => $batch_array,
+                    'status'        => 'addfile',
+                );
+                $key        = $option_prefix . $zip_file_name . '_%';
+                $sql        = 'SELECT count(*) FROM ' . $table . ' WHERE ' . $column . ' LIKE %s';
+                $save_times = $wpdb->get_var($wpdb->prepare($sql, $key));
+                update_site_option($option_prefix . $zip_file_name . '_' . $save_times, $item);
+                $option_keys[] = $option_prefix . $zip_file_name . '_' . $save_times;
+            }
+            update_site_option($step_0_option_name, array(
+                'success' => true,
+                'data'    => array(
+                    'zip_file_name' => $zip_file_name,
+                    'zip_file_path' => $zip_file_path,
+                    'option_keys'   => $option_keys,
+                ),
+                'msg'     => '第一階段取得壓縮資訊成功！',
+            ));
+            exit;
+        }
+        // 取得背景打包的必要資訊
+        if ($step == 1) {
+            $data = get_site_option($step_0_option_name, "");
+            if ($data == '') {
+                echo json_encode(array('success' => false, 'data' => array(), 'msg' => '等待更新中，請稍候'));
+                exit;
+            } else {
+                echo json_encode($data);
+                $sql = 'DELETE FROM ' . $table . ' WHERE ' . $column . ' LIKE %s';
+                $del = $wpdb->query($wpdb->prepare($sql, $step_0_option_name));
+                exit;
+            }
+        }
+        //取得批次打包的資訊後開始打包
+        if ($step == 2) {
+            $zip_file_name = sanitize_text_field($_REQUEST['zip_file_name']);
+            $zip_file_path = sanitize_text_field($_REQUEST['zip_file_path']);
+            $option_key    = sanitize_text_field($_REQUEST['option_key']);
+            $path          = sanitize_text_field($_REQUEST['path']);
+            $type          = sanitize_text_field($_REQUEST['type']);
+            if (empty($zip_file_name) || empty($zip_file_path) || !in_array($type, array('folder'), true) || empty($option_key) || !wp_verify_nonce($_REQUEST['nonce'], 'mxp-download-current-plugins-' . $path)) {
+                echo json_encode(array('success' => false, 'data' => array(), 'msg' => '驗證請求失敗，請再試一次。'));
+                exit;
+            }
+            $item = get_site_option($option_key, '');
+            if ($item == '') {
+                echo json_encode(array('success' => false, 'data' => array(), 'msg' => '傳入資料有誤，請再次確認！'));
+                exit;
+            }
+
+            $zip = new \ZipArchive;
+            $zip->open($item['zip_file_path'], \ZipArchive::CREATE);
+            foreach ($item['file_paths'] as $key => $file_path) {
+                $fileToAdd = $file_path[0];
+                $fileInfo  = $zip->statName($file_path[0]);
+                if (!$fileInfo) {
+                    $zip->addFile($file_path[0], $file_path[1]);
+                }
+            }
+            $zip->close();
+
+            $key = $option_prefix . $item['zip_file_name'] . '_%';
+
+            $sql = '
+            SELECT COUNT(*)
+            FROM ' . $table . '
+            WHERE ' . $column . ' LIKE %s
+            ORDER BY ' . $key_column . ' ASC
+            ';
+            $sp_count    = explode('_', $option_key);
+            $current_num = end($sp_count);
+
+            $total_batch_count = $wpdb->get_var($wpdb->prepare($sql, $key));
+            $percent           = intval(round(((intval($current_num)) / intval($total_batch_count)), 2) * 100);
+            echo json_encode(array('success' => true, 'data' => array(intval($current_num + 1), intval($total_batch_count)), 'msg' => $percent));
+
+            exit;
+        }
+        //打包下載與刪除options
+        if ($step == 3) {
+            $zip_file_name = sanitize_text_field($_REQUEST['zip_file_name']);
+            $zip_file_path = sanitize_text_field($_REQUEST['zip_file_path']);
+            $path          = sanitize_text_field($_REQUEST['path']);
+            $type          = sanitize_text_field($_REQUEST['type']);
+            if (empty($zip_file_name) || empty($zip_file_path) || !in_array($type, array('folder'), true) || !wp_verify_nonce($_REQUEST['nonce'], 'mxp-download-current-plugins-' . $path)) {
+                echo json_encode(array('success' => false, 'data' => array(), 'msg' => '驗證請求失敗，請再試一次。'));
+                exit;
+            }
+
+            $key = $option_prefix . $zip_file_name . '_%';
+            $sql = 'DELETE FROM ' . $table . ' WHERE ' . $column . ' LIKE %s';
+            $del = $wpdb->query($wpdb->prepare($sql, $key));
+            if ($del !== false) {
+                if ($zip_file_path != '' && file_exists($zip_file_path)) {
+                    // 檔案存在，建立超連結提供前端下載
+                    $letters = 'abcdefghijklmnopqrstuvwxyz';
+                    srand((double) microtime() * 1000000);
+                    $salt = '';
+                    for ($i = 1; $i <= rand(4, 12); $i++) {
+                        $q    = rand(1, 24);
+                        $salt = $salt . $letters[$q];
+                    }
+                    $new_file_name  = $salt . '-' . $zip_file_name;
+                    $path_to_mxpdev = str_replace('/', DIRECTORY_SEPARATOR, '/uploads/MXPDEV/');
+                    $wp_content_dir = str_replace('/', DIRECTORY_SEPARATOR, WP_CONTENT_DIR);
+                    $download_dir   = $wp_content_dir . $path_to_mxpdev . $new_file_name;
+                    if (!file_exists($wp_content_dir . $path_to_mxpdev) && !is_dir($wp_content_dir . $path_to_mxpdev)) {
+                        mkdir($wp_content_dir . $path_to_mxpdev, 0777, true);
+                    }
+                    $index_file = $wp_content_dir . $path_to_mxpdev . 'index.html';
+                    if (!file_exists($index_file)) {
+                        touch($index_file);
+                    }
+                    if (is_link($download_dir)) {
+                        unlink($download_dir);
+                    }
+                    $filesize = filesize($zip_file_path); // bytes
+                    $filesize = round($filesize / 1024 / 1024, 1); // megabytes with 1 digit
+                    if (function_exists('rename')) {
+                        rename($zip_file_path, $download_dir);
+                    } else {
+                        if (function_exists('symlink')) {
+                            symlink($zip_file_path, $download_dir);
+                        } else {
+                            wp_send_json(array('success' => false, 'data' => array(), 'msg' => '請聯絡網站伺服器管理員開放 symlink 或 rename 至少其中一個方法。'));
+                            exit;
+                        }
+                    }
+                    $upload_dir    = wp_upload_dir();
+                    $download_link = $upload_dir['baseurl'] . "/MXPDEV/" . $new_file_name;
+                    echo json_encode(array('success' => true, 'data' => array('download_link' => $download_link, 'filesize' => $filesize), 'msg' => '下載檔案中'));
+                    exit;
+                } else {
+                    echo json_encode(array('success' => false, 'data' => array(), 'msg' => '檔案不存在'));
+                    exit;
+                }
+            } else {
+                echo json_encode(array('success' => false, 'data' => array(), 'msg' => '刪除 options 失敗！'));
+                exit;
+            }
+            echo json_encode(array('success' => false, 'data' => array(), 'msg' => '完全不知道失敗在哪的錯誤！？'));
+            exit;
+        }
+        echo json_encode(array('success' => false, 'data' => array(), 'msg' => '沒有這一步喔！'));
+        exit;
+    }
+
     public function mxp_ajax_background_pack_action() {
         if (!is_super_admin()) {
             wp_send_json(array('success' => false, 'data' => array(), 'msg' => '此功能僅限網站最高權限管理人員使用！'));
@@ -638,7 +1031,10 @@ trait DatabaseOptimize {
             $zip_file_name    = $split_path[count($split_path) - 2] . '.zip';
             $relative_path    = realpath(dirname($path) . '/..'); //for support php5.3 up | dirname($path, 2) php7.0 up;
             $tmp_dir          = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
-            $zip_file_path    = $tmp_dir . DIRECTORY_SEPARATOR . $zip_file_name;
+            if (defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') {
+                $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
+            }
+            $zip_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $zip_file_name;
             //清除當前打包檔案
             if (file_exists($zip_file_path)) {
                 unlink($zip_file_path);
@@ -1035,7 +1431,10 @@ trait DatabaseOptimize {
             }
             closedir($folder);
         }
-        $tmp_dir   = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+        $tmp_dir = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+        if (defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') {
+            $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
+        }
         $directory = $tmp_dir . DIRECTORY_SEPARATOR;
         $files     = scandir($directory);
         foreach ($files as $file) {

@@ -5,7 +5,7 @@ Tags: Mxp.TW, Tools, Development, Snippets, Reset, Optimiztion
 Requires at least: 4.6
 Requires PHP: 5.6
 Tested up to: 6.5
-Stable tag: 3.1.3
+Stable tag: 3.1.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -77,6 +77,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 可以透過網站的[聯絡我](https://www.mxp.tw/contact/)，跟我說！
 
 == Changelog ==
+
+= 3.1.4 =
+
+* 新增批次打包模式，避免嚴苛環境的主機無法完成打包作業
+* 調整打包暫存目錄的常數選項，可以調整為網站的下載目錄
 
 = 3.1.3 =
 

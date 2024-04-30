@@ -3,7 +3,11 @@
  * Plugin Name: Dev Tools - Mxp.TW
  * Plugin URI: https://goo.gl/2gLq18
  * Description: 一介資男の常用外掛整理與常用開發功能整合外掛。
- * Version: 3.1.4
+ * Requires at least: 4.6
+ * Requires PHP: 5.6
+ * Tested up to: 6.5
+ * Stable tag: 3.1.7
+ * Version: 3.1.7
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -34,7 +38,7 @@ class MxpDevTools {
     use DatabaseOptimize;
     use SearchReplace;
     use Utility;
-    static $VERSION                   = '3.1.4';
+    static $VERSION                   = '3.1.7';
     private $themeforest_api_base_url = 'https://api.envato.com/v3';
     protected static $instance        = null;
     public $plugin_slug               = 'mxp_wp_dev_tools';
@@ -66,6 +70,8 @@ class MxpDevTools {
         add_action('wp_ajax_mxp_background_pack', array($this, 'mxp_ajax_background_pack_action'));
         add_action('wp_ajax_mxp_background_pack_batch_mode', array($this, 'mxp_ajax_background_pack_action_batch_mode'));
         add_action('wp_ajax_mxp_ajax_db_optimize', array($this, 'mxp_ajax_db_optimize'));
+        add_action('wp_ajax_mxp_ajax_db_optimize_postmeta', array($this, 'mxp_ajax_db_optimize_postmeta'));
+        add_action('wp_ajax_mxp_ajax_db_optimize_usermeta', array($this, 'mxp_ajax_db_optimize_usermeta'));
         add_action('wp_ajax_mxp_ajax_clean_orphan', array($this, 'mxp_ajax_clean_orphan'));
         add_action('wp_ajax_mxp_ajax_clean_mxpdev', array($this, 'mxp_ajax_clean_mxpdev'));
         add_action('wp_ajax_mxp_ajax_reset_user_metabox', array($this, 'mxp_ajax_reset_user_metabox'));
@@ -260,6 +266,12 @@ class MxpDevTools {
             echo '<p>許多外掛、主題安裝啟用測試後會在設定資料表中留下紀錄，如果外掛沒有自行清除就會累積，造成網站載入變慢的問題。</p>';
             echo '<button id="go_clean_options" data-step="1" type="button" class="button button-primary">取得清除清單</button></br>';
             echo '<div id="go_clean_options_result"></div></br>';
+            echo '<h3>清除重複的 Post Meta</h3>';
+            echo '<button id="go_clean_postmeta" data-step="1" type="button" class="button button-primary">取得清除清單</button></br>';
+            echo '<div id="go_clean_postmeta_result"></div></br>';
+            echo '<h3>清除重複的 User Meta</h3>';
+            echo '<button id="go_clean_usermeta" data-step="1" type="button" class="button button-primary">取得清除清單</button></br>';
+            echo '<div id="go_clean_usermeta_result"></div></br>';
             echo '<h3>清除孤立的 Post/Comment Meta 資料</h3>';
             echo '<p>不論是手動刪除或是外掛刪除內容，可能沒連帶刪除的 Meta 關聯資料，堆積在資料庫裡變成垃圾。</p>';
             $orphan_postmeta_count    = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->postmeta} pm LEFT JOIN {$wpdb->posts} wp ON wp.ID = pm.post_id WHERE wp.ID IS NULL");
@@ -545,7 +557,7 @@ class MxpDevTools {
     }
 
     public function getwpconfig_page_cb() {
-        $this->page_wraper('查看網站各項設定', function () {
+        $this->page_wraper('查看網站各項設定（當前使用者 ID: ' . get_current_user_id() . '）', function () {
             echo '<h2>網路資訊</h2></br>';
             $response = wp_remote_get('https://undo.im/json?v=' . self::$VERSION . '&from=' . get_site_url(), array('sslverify' => false, 'timeout' => 5));
             if (!is_wp_error($response)) {

@@ -230,6 +230,186 @@
                 // $('#go_clean_options').prop('disabled', false);
             }
         });
+        $('#go_clean_postmeta').click(function() {
+            var yes = confirm('注意！接下來會進行對資料庫的實際操作，確保有備份好資料再進行！\n此操作針對 _postmeta 資料表中，重複的 meta_key 紀錄進行清除。');
+            if (yes == false) {
+                return;
+            }
+            $(this).text('作業中！請耐心等待，勿重新整理此頁面！');
+            var step = $('#go_clean_postmeta').data('step');
+            $('#go_clean_postmeta').prop('disabled', true);
+            if (step == 1) {
+                var data = {
+                    'action': 'mxp_ajax_db_optimize_postmeta',
+                    'nonce': MXP.nonce,
+                    'step': step,
+                };
+                $.post(MXP.ajaxurl, data, function(res) {
+                    if (res.success) {
+                        console.log(res.data);
+                        var str = '';
+                        if (res.data !== undefined && res.data.length > 0) {
+                            str = '<table><thead><tr><th colspan="4">清除重複的 Post Meta 資料，預設清除較舊的那筆。</th></tr></thead><tbody>';
+                            str += '<tr><td><input type="checkbox" id="del_all_postmeta" name="del_all_postmeta" checked><label for="del_all_postmeta">全部刪除/Meta ID</label></td><td>Post ID</td><td>Meta Key</td><td>Meta Value</td></tr>';
+                            for (var i = 0; i < res.data.length; i++) {
+                                str += '<tr><td><input type="checkbox" class="del_postmeta_id_chk" id="del_meta_id_' + res.data[i].meta_id + '" value="' + res.data[i].meta_id + '" checked>' + res.data[i].meta_id + '</td><td>' + res.data[i].post_id + '</td><td>' + res.data[i].meta_key + '</td><td>' + res.data[i].meta_value + '<span id="res_postmeta_' + res.data[i].meta_id + '"></span></td></tr>';
+                            }
+                            str += '</tbody></table>';
+                        }
+                        if (str != '') {
+                            $('#go_clean_postmeta_result').html('</br>' + str);
+                            $('#del_all_postmeta').click(function() {
+                                var checkBoxes = $("input.del_postmeta_id_chk");
+                                checkBoxes.prop("checked", !checkBoxes.prop("checked"));
+                            });
+                            $('#go_clean_postmeta').data('step', 2);
+                            $('#go_clean_postmeta').text('刪除勾選項目');
+                            $('#go_clean_postmeta').prop('disabled', false);
+                        } else {
+                            $('#go_clean_postmeta').text('無需清除紀錄');
+                            $('#go_clean_postmeta').prop('disabled', true);
+                        }
+                    } else {
+                        console.log(res.data);
+                        $('#go_clean_postmeta').prop('disabled', false);
+                    }
+                });
+            }
+            if (step == 2) {
+                var meta_ids = [];
+                $('input.del_postmeta_id_chk:checked').each(function() {
+                    meta_ids.push($(this).val());
+                });
+                console.log(meta_ids);
+                for (var i = 0; i < meta_ids.length; i++) {
+                    var del = $('#del_meta_id_' + meta_ids[i]).is(":checked");
+                    if (del) {
+                        var tmp = [];
+                        tmp.push(meta_ids[i]);
+                        var ajax_options = {
+                            method: "POST",
+                            url: MXP.ajaxurl,
+                            cache: false,
+                            error: function(res) {
+                                console.log('Error', res);
+                            },
+                            success: function(res) {
+                                if (res.success) {
+                                    console.log('success', res.data);
+                                    if (res.data !== undefined && res.data.length > 0) {
+                                        for (var i = 0; i < res.data.length; i++) {
+                                            $('#res_postmeta_' + $.escapeSelector(res.data[i])).html('<font color="red"> 》已清除！</font>');
+                                        }
+                                    }
+                                }
+                            },
+                            data: {
+                                'action': 'mxp_ajax_db_optimize_postmeta',
+                                'nonce': MXP.nonce,
+                                'step': step,
+                                'meta_ids': tmp
+                            }
+                        };
+                        $.ajaxQueue.addRequest(ajax_options);
+                        $('#res_postmeta_' + $.escapeSelector(meta_ids[i])).html(meta_ids[i] + '<font color="blue"> (<strong>作業中！請耐心等待，勿重新整理此頁面！</strong>)</font>');
+                    } else {
+                        $('#res_postmeta_' + $.escapeSelector(meta_ids[i])).html(meta_ids[i] + '<font color="orange"> (<strong>本次作業不處理！</strong>)</font>');
+                    }
+                }
+                $.ajaxQueue.run();
+                $('#go_clean_postmeta').text('清除中...請勿重新整理頁面。');
+            }
+        });
+        $('#go_clean_usermeta').click(function() {
+            var yes = confirm('注意！接下來會進行對資料庫的實際操作，確保有備份好資料再進行！\n此操作針對 _usermeta 資料表中，重複的 meta_key 紀錄進行清除。');
+            if (yes == false) {
+                return;
+            }
+            $(this).text('作業中！請耐心等待，勿重新整理此頁面！');
+            var step = $('#go_clean_usermeta').data('step');
+            $('#go_clean_usermeta').prop('disabled', true);
+            if (step == 1) {
+                var data = {
+                    'action': 'mxp_ajax_db_optimize_usermeta',
+                    'nonce': MXP.nonce,
+                    'step': step,
+                };
+                $.post(MXP.ajaxurl, data, function(res) {
+                    if (res.success) {
+                        console.log(res.data);
+                        var str = '';
+                        if (res.data !== undefined && res.data.length > 0) {
+                            str = '<table><thead><tr><th colspan="4">清除重複的 User Meta 資料，預設清除較舊的那筆。</th></tr></thead><tbody>';
+                            str += '<tr><td><input type="checkbox" id="del_all_usermeta" name="del_all_usermeta" checked><label for="del_all_usermeta">全部刪除/Meta ID</label></td><td>User ID</td><td>Meta Key</td><td>Meta Value</td></tr>';
+                            for (var i = 0; i < res.data.length; i++) {
+                                str += '<tr><td><input type="checkbox" class="del_usermeta_id_chk" id="del_meta_id_' + res.data[i].umeta_id + '" value="' + res.data[i].umeta_id + '" checked>' + res.data[i].umeta_id + '</td><td>' + res.data[i].user_id + '</td><td>' + res.data[i].meta_key + '</td><td>' + res.data[i].meta_value + '<span id="res_usermeta_' + res.data[i].umeta_id + '"></span></td></tr>';
+                            }
+                            str += '</tbody></table>';
+                        }
+                        if (str != '') {
+                            $('#go_clean_usermeta_result').html('</br>' + str);
+                            $('#del_all_usermeta').click(function() {
+                                var checkBoxes = $("input.del_usermeta_id_chk");
+                                checkBoxes.prop("checked", !checkBoxes.prop("checked"));
+                            });
+                            $('#go_clean_usermeta').data('step', 2);
+                            $('#go_clean_usermeta').text('刪除勾選項目');
+                            $('#go_clean_usermeta').prop('disabled', false);
+                        } else {
+                            $('#go_clean_usermeta').text('無需清除紀錄');
+                            $('#go_clean_usermeta').prop('disabled', true);
+                        }
+                    } else {
+                        console.log(res.data);
+                        $('#go_clean_usermeta').prop('disabled', false);
+                    }
+                });
+            }
+            if (step == 2) {
+                var meta_ids = [];
+                $('input.del_usermeta_id_chk:checked').each(function() {
+                    meta_ids.push($(this).val());
+                });
+                console.log(meta_ids);
+                for (var i = 0; i < meta_ids.length; i++) {
+                    var del = $('#del_meta_id_' + meta_ids[i]).is(":checked");
+                    if (del) {
+                        var tmp = [];
+                        tmp.push(meta_ids[i]);
+                        var ajax_options = {
+                            method: "POST",
+                            url: MXP.ajaxurl,
+                            cache: false,
+                            error: function(res) {
+                                console.log('Error', res);
+                            },
+                            success: function(res) {
+                                if (res.success) {
+                                    console.log('success', res.data);
+                                    if (res.data !== undefined && res.data.length > 0) {
+                                        for (var i = 0; i < res.data.length; i++) {
+                                            $('#res_usermeta_' + $.escapeSelector(res.data[i])).html('<font color="red"> 》已清除！</font>');
+                                        }
+                                    }
+                                }
+                            },
+                            data: {
+                                'action': 'mxp_ajax_db_optimize_usermeta',
+                                'nonce': MXP.nonce,
+                                'step': step,
+                                'meta_ids': tmp
+                            }
+                        };
+                        $.ajaxQueue.addRequest(ajax_options);
+                        $('#res_usermeta_' + $.escapeSelector(meta_ids[i])).html(meta_ids[i] + '<font color="blue"> (<strong>作業中！請耐心等待，勿重新整理此頁面！</strong>)</font>');
+                    } else {
+                        $('#res_usermeta_' + $.escapeSelector(meta_ids[i])).html(meta_ids[i] + '<font color="orange"> (<strong>本次作業不處理！</strong>)</font>');
+                    }
+                }
+                $.ajaxQueue.run();
+                $('#go_clean_usermeta').text('清除中...請勿重新整理頁面。');
+            }
+        });
         $('#go_reset_wp').click(function() {
             var yes = confirm('你確定知道自己正在將網站內容全部清除重新建置嗎？');
             if (yes == false) {

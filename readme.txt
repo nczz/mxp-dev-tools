@@ -1,11 +1,11 @@
 === 一介資男(Mxp.TW) 開發工具箱 ===
 Contributors: mxp
 Donate link: https://mxp.tw/jT
-Tags: Mxp.TW, Tools, Development, Snippets, Reset, Optimiztion
+Tags: Mxp.TW, Development, Snippets, Reset, Optimiztion
 Requires at least: 4.6
 Requires PHP: 5.6
 Tested up to: 6.5
-Stable tag: 3.1.4
+Stable tag: 3.1.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,20 +15,19 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 [Chun](https://www.mxp.tw/) 的 WordPress 開發實用外掛整理。
 
-> 來試用看看吧！[點此試用](https://tastewp.com/plugins/mxp-dev-tools/)
+特色功能(Features):
 
-特色(Features):
-
-1. 作者整理開發網站時常用的外掛，介面上提供批次安裝，根據需求調整外掛配置。
-2. 除了 WordPress 官方外掛庫外，另支援 Themeforest 的 API ，提供直接下載已付費佈景和外掛的功能（需提供授權碼）。
-3. 批次修改內容類型（Post Type）的作者，網站上線後把內容改為客戶帳號用。
-4. 官方外掛庫的快速搜尋外掛與安裝功能，取代內建速度緩慢的新工具。
-5. 外掛頁面提供每個外掛打包下載的工具，方便直接下載除錯。
-6. 因為佈景主題在單站模式下沒有列表頁面，另提供主題打包的工具。
-7. 查看 `wp-config.php` 檔案設定。
-8. 資料庫與資料表的設置與個別、統一匯出資料庫工具，支援多資料庫操作。
-9. 資料庫關鍵字搜尋並取代的工具，支援多資料庫操作。
-10. 針對 WordPress 設定資料表做載入耗能排名與最佳化設定的工具。
+- 作者開發常用外掛列表。
+- Themeforest 網站外掛主題下載安裝工具（需自行輸入授權碼）。
+- 批次修改內容類型（Post Type）作者的工具。
+- 快速搜尋與安裝外掛的工具。
+- 外掛打包下載的工具
+- 主題打包下載的工具。
+- 查看 `wp-config.php` 與網站主機檔案相關設定工具。
+- 資料庫打包匯出工具。
+- 網站 `wp-content` 目錄打包下載工具。
+- 資料庫關鍵字搜尋與取代工具。
+- 資料庫最佳化設定的工具。
 
 
 需求(Requirements):
@@ -46,7 +45,7 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 1. 上傳外掛至外掛目錄 `wp-content/plugins/` 下。 Upload the plugin files to the `/wp-content/plugins/` directory
 2. 於後台外掛功能處啟動外掛。 Activate the plugin through the 'Plugins' screen in WordPress
-3. 啟用後在後台選單可找到「FB工具箱設定」進行參數調整。 Use the 「FB工具箱設定」 screen to configure the plugin
+3. 啟用後在後台選單可找到「開發工具箱設定」進行參數調整。 Use the 「開發工具箱設定」 screen to configure the plugin
 4. 完成。 Done
 
 
@@ -77,6 +76,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 可以透過網站的[聯絡我](https://www.mxp.tw/contact/)，跟我說！
 
 == Changelog ==
+
+= 3.1.7 =
+
+* 新增清除重複 User/Post Meta 資料的最佳化資料庫的功能，參考：  [Cleanup Duplicate Meta](https://tw.wordpress.org/plugins/cleanup-duplicate-meta/) 
+* 修正一些操作體驗
 
 = 3.1.4 =
 

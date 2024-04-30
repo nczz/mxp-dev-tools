@@ -1370,6 +1370,97 @@ trait DatabaseOptimize {
             wp_send_json_success($deleted_options);
         }
     }
+
+    public function mxp_ajax_db_optimize_postmeta() {
+        set_time_limit(0);
+        if (!isset($_REQUEST['step']) || (intval($_REQUEST['step']) != 1 && intval($_REQUEST['step']) != 2)) {
+            wp_send_json_error('請求參數有誤！');
+        }
+        $step     = sanitize_text_field($_REQUEST['step']);
+        $meta_ids = isset($_REQUEST['meta_ids']) ? $_REQUEST['meta_ids'] : '';
+
+        if (!empty($meta_ids) && !is_array($meta_ids)) {
+            wp_send_json_error('請求參數有誤！');
+        }
+
+        if (is_array($meta_ids)) {
+            $meta_ids = array_map('intval', $meta_ids);
+        }
+
+        if (!isset($_REQUEST['nonce']) || !wp_verify_nonce($_REQUEST['nonce'], 'mxp-ajax-nonce-for-db-optimize')) {
+            wp_send_json_error('請求驗證有誤！');
+        }
+
+        global $wpdb;
+        if ($step == 1) {
+            $result = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}postmeta WHERE meta_id NOT IN ( SELECT * FROM ( SELECT MAX(meta_id) FROM {$wpdb->prefix}postmeta GROUP BY post_id, meta_key ) AS x)", ARRAY_A);
+            foreach ($result as $index => $item) {
+                $result[$index]['meta_value'] = esc_html($item['meta_value']);
+            }
+            wp_send_json_success($result);
+        }
+        if ($step == 2) {
+            $success = array();
+            foreach ($meta_ids as $key => $meta_id) {
+                $del = $wpdb->delete(
+                    $wpdb->prefix . 'postmeta',
+                    array('meta_id' => $meta_id),
+                    array('%d')
+                );
+                if ($del) {
+                    $success[] = $meta_id;
+                }
+            }
+            wp_send_json_success($success);
+        }
+        wp_send_json_error('請求方法有誤！');
+    }
+
+    public function mxp_ajax_db_optimize_usermeta() {
+        set_time_limit(0);
+        if (!isset($_REQUEST['step']) || (intval($_REQUEST['step']) != 1 && intval($_REQUEST['step']) != 2)) {
+            wp_send_json_error('請求參數有誤！');
+        }
+        $step     = sanitize_text_field($_REQUEST['step']);
+        $meta_ids = isset($_REQUEST['meta_ids']) ? $_REQUEST['meta_ids'] : '';
+
+        if (!empty($meta_ids) && !is_array($meta_ids)) {
+            wp_send_json_error('請求參數有誤！');
+        }
+
+        if (is_array($meta_ids)) {
+            $meta_ids = array_map('intval', $meta_ids);
+        }
+
+        if (!isset($_REQUEST['nonce']) || !wp_verify_nonce($_REQUEST['nonce'], 'mxp-ajax-nonce-for-db-optimize')) {
+            wp_send_json_error('請求驗證有誤！');
+        }
+
+        global $wpdb;
+        if ($step == 1) {
+            $result = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}usermeta WHERE umeta_id NOT IN ( SELECT * FROM ( SELECT MAX(umeta_id) FROM {$wpdb->prefix}usermeta GROUP BY user_id, meta_key ) AS x)", ARRAY_A);
+            foreach ($result as $index => $item) {
+                $result[$index]['meta_value'] = esc_html($item['meta_value']);
+            }
+            wp_send_json_success($result);
+        }
+        if ($step == 2) {
+            $success = array();
+            foreach ($meta_ids as $key => $umeta_id) {
+                $del = $wpdb->delete(
+                    $wpdb->prefix . 'usermeta',
+                    array('umeta_id' => $umeta_id),
+                    array('%d')
+                );
+                if ($del) {
+                    $success[] = $umeta_id;
+                }
+            }
+            wp_send_json_success($success);
+        }
+        wp_send_json_error('請求方法有誤！');
+    }
+
     public function mxp_ajax_clean_orphan() {
         if (!isset($_REQUEST['type']) || $_REQUEST['type'] == '') {
             wp_send_json_error('請求參數有誤！');

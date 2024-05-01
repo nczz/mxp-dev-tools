@@ -5,7 +5,7 @@ Tags: Mxp.TW, Development, Snippets, Reset, Optimiztion
 Requires at least: 4.6
 Requires PHP: 5.6
 Tested up to: 6.5
-Stable tag: 3.1.7
+Stable tag: 3.1.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -77,9 +77,13 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 == Changelog ==
 
+= 3.1.8 =
+
+* 新增顯示後台系統編號功能，參考：[Show IDs by DraftPress](https://tw.wordpress.org/plugins/wpsite-show-ids/) 
+
 = 3.1.7 =
 
-* 新增清除重複 User/Post Meta 資料的最佳化資料庫的功能，參考：  [Cleanup Duplicate Meta](https://tw.wordpress.org/plugins/cleanup-duplicate-meta/) 
+* 新增清除重複 User/Post Meta 資料的最佳化資料庫的功能，參考：[Cleanup Duplicate Meta](https://tw.wordpress.org/plugins/cleanup-duplicate-meta/) 
 * 修正一些操作體驗
 
 = 3.1.4 =

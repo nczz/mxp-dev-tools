@@ -6,8 +6,8 @@
  * Requires at least: 4.6
  * Requires PHP: 5.6
  * Tested up to: 6.5
- * Stable tag: 3.1.7
- * Version: 3.1.7
+ * Stable tag: 3.1.8
+ * Version: 3.1.8
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * Update URI: https://snippets.dev.mxp.tw/
@@ -116,9 +116,9 @@ if (!defined('MDT_DISALLOW_FILE_MODS')) {
 if (!defined('MDT_DISALLOW_FILE_MODS_ADMINS')) {
     define('MDT_DISALLOW_FILE_MODS_ADMINS', array(1));
 }
-// 顯示後台使用者編號
-if (!defined('MDT_SHOW_USER_ID')) {
-    define('MDT_SHOW_USER_ID', true);
+// 顯示後台內容的系統編號
+if (!defined('MDT_SHOW_IDS')) {
+    define('MDT_SHOW_IDS', true);
 }
 // 登入畫面的LOGO替換
 if (!defined('MDT_LOGINPAGE_LOGO_URL')) {
@@ -281,9 +281,31 @@ class MDTSnippets {
         add_filter('user_row_actions', array($this, 'filter_user_row_actions'), 11, 2);
         add_filter('ms_user_row_actions', array($this, 'filter_user_row_actions'), 11, 2);
         add_filter('get_edit_user_link', array($this, 'get_edit_user_link'), 11, 2);
-        if (MDT_SHOW_USER_ID) {
-            add_filter('manage_users_columns', array($this, 'add_user_id_column'));
-            add_action('manage_users_custom_column', array($this, 'show_user_id_column_content'), 10, 3);
+        if (MDT_SHOW_IDS) {
+            // 客製化CPT等的ID
+            add_action('admin_init', array($this, 'add_custom_object_ids'));
+            // 文章的ID
+            add_filter('manage_posts_columns', array($this, 'add_ids_column'));
+            add_action('manage_posts_custom_column', array($this, 'add_ids_value'), 10, 2);
+            // 頁面的ID
+            add_filter('manage_pages_columns', array($this, 'add_ids_column'));
+            add_action('manage_pages_custom_column', array($this, 'add_ids_value'), 10, 2);
+            // 媒體庫的ID
+            add_filter('manage_media_columns', array($this, 'add_ids_column'));
+            add_action('manage_media_custom_column', array($this, 'add_ids_value'), 10, 2);
+            // For Link Management.
+            add_filter('manage_link-manager_columns', array($this, 'add_ids_column'));
+            add_action('manage_link_custom_column', array($this, 'add_ids_value'), 10, 2);
+            // 分類的ID
+            add_action('manage_edit-link-categories_columns', array($this, 'add_ids_column'));
+            add_filter('manage_link_categories_custom_column', array($this, 'add_return_ids_value'), 10, 3);
+            // 使用者的ID
+            add_action('manage_users_columns', array($this, 'add_ids_column'));
+            add_filter('manage_users_custom_column', array($this, 'add_return_ids_value'), 10, 3);
+            // 留言的ID
+            add_action('manage_edit-comments_columns', array($this, 'add_ids_column'));
+            add_action('manage_comments_custom_column', array($this, 'add_ids_value'),
+                10, 2);
         }
         // 預設改變登入上方帶入連結與文字標題
         add_filter('login_headerurl', array($this, 'login_page_url'));
@@ -334,6 +356,46 @@ class MDTSnippets {
             add_filter('map_meta_cap', array($this, 'restrict_user_editing'), 99999, 4);
             add_filter('pre_count_users', array($this, 'filter_user_counts'), 99999, 3);
         }
+    }
+
+    public function add_custom_object_ids() {
+
+        // For Custom Taxonomies.
+        $taxonomies = get_taxonomies(array('public' => true), 'names');
+        foreach ($taxonomies as $custom_taxonomy) {
+            if (isset($custom_taxonomy)) {
+                add_action('manage_edit-' . $custom_taxonomy . '_columns', array($this, 'add_ids_column'));
+                add_filter('manage_' . $custom_taxonomy . '_custom_column', array($this, 'add_return_ids_value'), 10, 3);
+            }
+        }
+
+        // For Custom Post Types.
+        $post_types = get_post_types(array('public' => true), 'names');
+        foreach ($post_types as $post_type) {
+            if (isset($post_type)) {
+                add_action('manage_edit-' . $post_type . '_columns', array($this, 'add_ids_column'));
+                add_filter('manage_' . $post_type . '_custom_column', array($this, 'add_return_ids_value'), 10, 3);
+            }
+        }
+    }
+
+    public function add_ids_column($cols) {
+        $cols['mdt-show-ids'] = 'ID';
+        return $cols;
+    }
+
+    public function add_ids_value($column_name, $id) {
+        if ('mdt-show-ids' === $column_name) {
+            echo esc_html($id);
+        }
+    }
+
+    public function add_return_ids_value($value, $column_name, $id) {
+        if ('mdt-show-ids' === $column_name) {
+            $value = $id;
+        }
+
+        return $value;
     }
 
     public function block_user_login($user, $password) {
@@ -1048,18 +1110,6 @@ jQuery(document).ready(function(){
             return !MDT_DISALLOW_FILE_MODS;
         }
         return $disallow;
-    }
-
-    // 顯示使用者編號
-    public function add_user_id_column($columns) {
-        $columns['mxp_user_id'] = 'ID';
-        return $columns;
-    }
-    public function show_user_id_column_content($value, $column_name, $user_id) {
-        if ('mxp_user_id' === $column_name) {
-            return $user_id;
-        }
-        return $value;
     }
 
     public function mxp_get_plugin_details($plugin_path, $suffix = '') {

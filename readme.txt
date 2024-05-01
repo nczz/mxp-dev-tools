@@ -5,7 +5,7 @@ Tags: Mxp.TW, Development, Snippets, Reset, Optimiztion
 Requires at least: 4.6
 Requires PHP: 5.6
 Tested up to: 6.5
-Stable tag: 3.1.8
+Stable tag: 3.1.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -77,7 +77,7 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 == Changelog ==
 
-= 3.1.8 =
+= 3.1.9 =
 
 * 新增顯示後台系統編號功能，參考：[Show IDs by DraftPress](https://tw.wordpress.org/plugins/wpsite-show-ids/) 
 

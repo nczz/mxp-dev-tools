@@ -6,11 +6,10 @@
  * Requires at least: 4.6
  * Requires PHP: 5.6
  * Tested up to: 6.5
- * Stable tag: 3.1.8
- * Version: 3.1.8
+ * Stable tag: 3.1.9
+ * Version: 3.1.9
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
- * Update URI: https://snippets.dev.mxp.tw/
  * License: GPL v3
  */
 
@@ -180,7 +179,7 @@ class MDTSnippets {
         // 有其他外掛加入自動更新時也一並加入
         add_filter("pre_update_site_option_auto_update_plugins", array($this, 'pre_update_site_option_auto_update_plugins'), 11, 4);
         // v5.8.0 後提供的客製化更新勾點
-        add_filter("update_plugins_snippets.dev.mxp.tw", array($this, 'update_plugins_snippets'), 11, 4);
+        // add_filter("update_plugins_snippets.dev.mxp.tw", array($this, 'update_plugins_snippets'), 11, 4);
 
         if (MDT_ENABLE_OPTIMIZE_THEME) {
             // 主題相關最佳化
@@ -763,10 +762,6 @@ class MDTSnippets {
             $auto_updates[] = 'mxp-dev-tools/index.php';
         }
         return $auto_updates;
-    }
-
-    public function update_plugins_snippets($update, $plugin_data, $plugin_file, $locales) {
-        // 暫時無實作
     }
 
     //最佳化主題樣式相關

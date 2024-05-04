@@ -6,8 +6,8 @@
  * Requires at least: 4.6
  * Requires PHP: 5.6
  * Tested up to: 6.5
- * Stable tag: 3.1.9
- * Version: 3.1.9
+ * Stable tag: 3.1.10
+ * Version: 3.1.10
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -677,7 +677,7 @@ class MDTSnippets {
             return $redirect_to;
         }
         if (isset($user) && is_array($user->roles)) {
-            $allowed_roles = apply_filters('mxp_dev_admin_roles', array('editor', 'administrator', 'author'));
+            $allowed_roles = apply_filters('mxp_dev_admin_roles', array('editor', 'administrator', 'author', 'shop_manager'));
             $intersection  = array_intersect($user->roles, $allowed_roles);
             if (!empty($intersection)) {
                 $admins = true;
@@ -686,7 +686,7 @@ class MDTSnippets {
         if ($admins) {
             return admin_url();
         } else {
-            return site_url();
+            return $redirect_to;
         }
     }
 

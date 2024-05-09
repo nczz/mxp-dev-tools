@@ -6,8 +6,8 @@
  * Requires at least: 4.6
  * Requires PHP: 5.6
  * Tested up to: 6.5
- * Stable tag: 3.1.10
- * Version: 3.1.10
+ * Stable tag: 3.1.12
+ * Version: 3.1.12
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3

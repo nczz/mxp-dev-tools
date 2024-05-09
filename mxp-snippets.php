@@ -6,8 +6,8 @@
  * Requires at least: 4.6
  * Requires PHP: 5.6
  * Tested up to: 6.5
- * Stable tag: 3.1.10
- * Version: 3.1.10
+ * Stable tag: 3.1.12
+ * Version: 3.1.12
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -159,6 +159,14 @@ if (!defined("MDT_ENABLE_BLOCK_USER_FUNCTION")) {
 if (!defined("MDT_BLOCK_ALL_NETWORK_FUNCTION")) {
     define('MDT_BLOCK_ALL_NETWORK_FUNCTION', false);
 }
+// 預設開啟登入後分權限轉址
+if (!defined("MDT_ENABLE_LOGIN_REDIRECT")) {
+    define('MDT_ENABLE_LOGIN_REDIRECT', true);
+}
+// 開啟子主題下的 languages 目錄繼承翻譯 mo 檔案的功能
+if (!defined("MDT_ENABLE_OVERWRITE_I18N_MO_FILE")) {
+    define('MDT_ENABLE_OVERWRITE_I18N_MO_FILE', true);
+}
 class MDTSnippets {
     public function __construct() {
         // 註冊程式碼片段的勾點
@@ -309,7 +317,9 @@ class MDTSnippets {
         // 預設改變登入上方帶入連結與文字標題
         add_filter('login_headerurl', array($this, 'login_page_url'));
         add_filter('login_headertext', array($this, 'login_page_url_title'));
-        add_filter('login_redirect', array($this, 'login_redirect'), 11, 3);
+        if (MDT_ENABLE_LOGIN_REDIRECT) {
+            add_filter('login_redirect', array($this, 'login_redirect'), 11, 3);
+        }
         if (!empty(MDT_LOGINPAGE_LOGO_URL) && filter_var(MDT_LOGINPAGE_LOGO_URL, FILTER_VALIDATE_URL)) {
             add_action('login_enqueue_scripts', array($this, 'login_css_enqueues'));
         }
@@ -355,6 +365,20 @@ class MDTSnippets {
             add_filter('map_meta_cap', array($this, 'restrict_user_editing'), 99999, 4);
             add_filter('pre_count_users', array($this, 'filter_user_counts'), 99999, 3);
         }
+        if (MDT_ENABLE_OVERWRITE_I18N_MO_FILE) {
+            add_filter('load_textdomain_mofile', array($this, 'load_custom_translation_mo_file'), 12, 2);
+        }
+    }
+
+    public function load_custom_translation_mo_file($mofile, $domain) {
+        $overwrite_textdomains = apply_filters("mxp_dev_overwrite_i18n_textdomains", array('woocommerce'));
+        if (is_array($overwrite_textdomains) && in_array($domain, $overwrite_textdomains)) {
+            $theme_mofile = get_stylesheet_directory() . '/languages/' . $domain . '-' . get_locale() . '.mo';
+            if (file_exists($theme_mofile)) {
+                return $theme_mofile;
+            }
+        }
+        return $mofile;
     }
 
     public function add_custom_object_ids() {
@@ -438,7 +462,7 @@ class MDTSnippets {
         }
         $current_user = wp_get_current_user();
         //限制角色操作功能
-        $allowed_roles = apply_filters('mxp_dev_block_user_roles', array('administrator'));
+        $allowed_roles = apply_filters('mxp_dev_block_user_roles', array('administrator', 'shop_manager'));
         if (array_intersect($allowed_roles, $current_user->roles)) {
             update_user_meta($user_id, '_mxp_dev_block_user_check', intval($_POST['_mxp_dev_block_user_check']));
             update_user_meta($user_id, '_mxp_dev_block_user_msg', sanitize_text_field($_POST['_mxp_dev_block_user_msg']));
@@ -774,7 +798,7 @@ class MDTSnippets {
         add_filter('the_generator', '__return_false');
         //管理員等級的角色不要隱藏 admin bar
         $user          = wp_get_current_user();
-        $allowed_roles = apply_filters('mxp_dev_show_admin_bar_roles', array('editor', 'administrator', 'author'));
+        $allowed_roles = apply_filters('mxp_dev_show_admin_bar_roles', array('editor', 'administrator', 'author', 'shop_manager'));
         if (!array_intersect($allowed_roles, $user->roles)) {
             add_filter('show_admin_bar', '__return_false');
         }
@@ -785,10 +809,10 @@ class MDTSnippets {
         add_filter('widget_text', 'do_shortcode');
         // 讓主題支援使用 WC 的方法
         if (class_exists('WooCommerce')) {
-            add_theme_support('woocommerce');
-            add_theme_support('wc-product-gallery-zoom');
-            add_theme_support('wc-product-gallery-lightbox');
-            add_theme_support('wc-product-gallery-slider');
+            // add_theme_support('woocommerce');
+            // add_theme_support('wc-product-gallery-zoom');
+            // add_theme_support('wc-product-gallery-lightbox');
+            // add_theme_support('wc-product-gallery-slider');
         }
     }
     // 隱藏非管理員的前端上方控制選單
@@ -1115,7 +1139,7 @@ jQuery(document).ready(function(){
         if (empty($plugin_data['Name'])) {
             return basename($plugin_path);
         }
-        return array("Name" => $plugin_data['Name'], "Version" => $plugin_data['Version'], "Author" => strip_tags($plugin_data['AuthorName']));
+        return array("Name" => $plugin_data['Name'], "Version" => $plugin_data['Version'], "Author" => strip_tags($plugin_data['AuthorName']), "plugin_path" => $plugin_path);
     }
 
     public function filter_user_query_qrgs($args) {

@@ -6,8 +6,8 @@
  * Requires at least: 4.6
  * Requires PHP: 5.6
  * Tested up to: 6.5
- * Stable tag: 3.1.12
- * Version: 3.1.12
+ * Stable tag: 3.1.13
+ * Version: 3.1.13
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -38,7 +38,7 @@ if (!defined('MDT_SITES_INFO_KEY')) {
 
 class MDTSiteManager {
     public $plugin_slug    = 'mdt-site-manager';
-    public static $VERSION = '3.1.12';
+    public static $VERSION = '3.1.13';
 
     public function __construct() {
         // 註冊程式碼片段的勾點

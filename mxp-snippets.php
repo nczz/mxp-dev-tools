@@ -6,8 +6,8 @@
  * Requires at least: 4.6
  * Requires PHP: 5.6
  * Tested up to: 6.5
- * Stable tag: 3.1.12
- * Version: 3.1.12
+ * Stable tag: 3.1.13
+ * Version: 3.1.13
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -264,7 +264,8 @@ class MDTSnippets {
             add_filter('author_link', array($this, 'hide_author_link'), 3, 100);
         }
         if (MDT_HIDE_AUTHOR_NAME) {
-            add_filter('the_author_posts_link', array($this, 'hide_author_name'), 11, 1);
+            // add_filter('the_author_posts_link', array($this, 'hide_author_name'), 11, 1);
+            add_filter('the_author', array($this, 'hide_author_name'), 11, 1);
         }
         if (MDT_DISABLE_AVATAR) {
             // 取消站內的全球大頭貼功能，全改為預設大頭貼
@@ -1041,6 +1042,7 @@ jQuery(document).ready(function(){
             }
         }
     }
+
     // 輸出安全性的 HTTP 標頭
     public function add_security_headers($headers) {
         $headers['X-XSS-Protection']                  = '1; mode=block';
@@ -1050,14 +1052,21 @@ jQuery(document).ready(function(){
         $headers['Strict-Transport-Security']         = 'max-age=31536000; includeSubDomains; preload';
         return $headers;
     }
+
     // 預設作者的連結都不顯示
     public function hide_author_link($link, $author_id, $author_nicename) {
         return '#';
     }
+
     // 預設不顯示出系統輸出的作者連結與頁面，避免資安問題
-    public function hide_author_name($link) {
+    public function hide_author_name($name) {
+        global $authordata;
+        if (is_object($authordata)) {
+            return ($authordata->display_name != $authordata->user_login) ? $authordata->display_name : MDT_AUTHOR_DISPLAY_NAME;
+        }
         return MDT_AUTHOR_DISPLAY_NAME;
     }
+
     // 取消站內的全球大頭貼功能，全改為預設大頭貼
     public function empty_avatar_data($args, $id_or_email) {
         //email md5 wordpress.gravatar@mxp.tw

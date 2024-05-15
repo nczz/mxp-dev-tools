@@ -6,8 +6,8 @@
  * Requires at least: 4.6
  * Requires PHP: 5.6
  * Tested up to: 6.5
- * Stable tag: 3.1.13
- * Version: 3.1.13
+ * Stable tag: 3.1.14
+ * Version: 3.1.14
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -1060,6 +1060,9 @@ jQuery(document).ready(function(){
 
     // 預設不顯示出系統輸出的作者連結與頁面，避免資安問題
     public function hide_author_name($name) {
+        if (is_admin()) {
+            return $name;
+        }
         global $authordata;
         if (is_object($authordata)) {
             return ($authordata->display_name != $authordata->user_login) ? $authordata->display_name : MDT_AUTHOR_DISPLAY_NAME;

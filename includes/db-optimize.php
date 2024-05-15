@@ -7,6 +7,10 @@ if (!defined('WPINC')) {
 
 trait DatabaseOptimize {
     public function mxp_ajax_mysqldump() {
+        $check_zip_module = (class_exists('ZipArchive') && method_exists('ZipArchive', 'open')) ? true : false;
+        if (!$check_zip_module) {
+            die('未安裝/啟用 PHP ZIP 模組，無法呼叫 ZipArchive 方法打包。');
+        }
         set_time_limit(0);
         ini_set("memory_limit", "-1");
         if (!isset($_REQUEST['database']) || $_REQUEST['database'] == '') {
@@ -517,6 +521,11 @@ trait DatabaseOptimize {
     }
 
     public function mxp_ajax_background_pack_action_batch_mode() {
+        $check_zip_module = (class_exists('ZipArchive') && method_exists('ZipArchive', 'open')) ? true : false;
+        if (!$check_zip_module) {
+            echo json_encode(array('success' => false, 'data' => array(), 'msg' => '未安裝/啟用 PHP ZIP 模組，無法呼叫 ZipArchive 方法打包。'));
+            exit;
+        }
         if (!is_super_admin()) {
             echo json_encode(array('success' => false, 'data' => array(), 'msg' => '此功能僅限網站最高權限管理人員使用！'));
             exit;
@@ -905,6 +914,11 @@ trait DatabaseOptimize {
     }
 
     public function mxp_ajax_background_pack_action() {
+        $check_zip_module = (class_exists('ZipArchive') && method_exists('ZipArchive', 'open')) ? true : false;
+        if (!$check_zip_module) {
+            wp_send_json(array('success' => false, 'data' => array(), 'msg' => '未安裝/啟用 PHP ZIP 模組，無法呼叫 ZipArchive 方法打包。'));
+            exit;
+        }
         if (!is_super_admin()) {
             wp_send_json(array('success' => false, 'data' => array(), 'msg' => '此功能僅限網站最高權限管理人員使用！'));
             exit;

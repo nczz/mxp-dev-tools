@@ -6,8 +6,8 @@
  * Requires at least: 4.6
  * Requires PHP: 5.6
  * Tested up to: 6.5
- * Stable tag: 3.1.13
- * Version: 3.1.13
+ * Stable tag: 3.1.14
+ * Version: 3.1.14
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -38,7 +38,7 @@ class MxpDevTools {
     use DatabaseOptimize;
     use SearchReplace;
     use Utility;
-    static $VERSION                   = '3.1.13';
+    static $VERSION                   = '3.1.14';
     private $themeforest_api_base_url = 'https://api.envato.com/v3';
     protected static $instance        = null;
     public $plugin_slug               = 'mxp_wp_dev_tools';
@@ -557,7 +557,8 @@ class MxpDevTools {
     }
 
     public function getwpconfig_page_cb() {
-        $this->page_wraper('查看網站各項設定（當前使用者 ID: ' . get_current_user_id() . '）', function () {
+        include ABSPATH . 'wp-includes/version.php';
+        $this->page_wraper('查看網站各項設定（WP: ' . $wp_version . ' / User ID: ' . get_current_user_id() . '）', function () {
             echo '<h2>網路資訊</h2></br>';
             $response = wp_remote_get('https://undo.im/json?v=' . self::$VERSION . '&from=' . get_site_url(), array('sslverify' => false, 'timeout' => 5));
             if (!is_wp_error($response)) {

@@ -5,7 +5,7 @@ Tags: Mxp.TW, Development, Snippets, Reset, Optimiztion
 Requires at least: 4.6
 Requires PHP: 5.6
 Tested up to: 6.5
-Stable tag: 3.1.13
+Stable tag: 3.1.14
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -76,6 +76,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 可以透過網站的[聯絡我](https://www.mxp.tw/contact/)，跟我說！
 
 == Changelog ==
+
+= 3.1.14 =
+
+* 修正後台文章作者因為安全性顯示「小編」的問題
+* 增加判斷伺服器是否有啟用 ZipArchive 功能
 
 = 3.1.13 =
 

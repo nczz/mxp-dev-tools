@@ -240,7 +240,10 @@ trait PluginsList {
     }
 
     public function mxp_ajax_current_plugin_download_action() {
-
+        $check_zip_module = (class_exists('ZipArchive') && method_exists('ZipArchive', 'open')) ? true : false;
+        if (!$check_zip_module) {
+            die('未安裝/啟用 PHP ZIP 模組，無法呼叫 ZipArchive 方法打包。');
+        }
         if (!is_super_admin()) {
             exit('此功能僅限網站最高權限管理人員使用。');
         }

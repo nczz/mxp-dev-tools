@@ -27,7 +27,7 @@ trait DatabaseOptimize {
         global $wpdb;
         $sql_name = $export_database . '-' . $export_table . '-' . date('Y-m-d-H-i-s') . '.sql';
         $tmp_dir  = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
-        if (defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') {
+        if ((defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') || !is_writable($tmp_dir)) {
             $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
         }
         $sql_full_path = $tmp_dir . DIRECTORY_SEPARATOR . $sql_name;
@@ -173,7 +173,7 @@ trait DatabaseOptimize {
             $zip           = new \ZipArchive();
             $zip_file_name = $sql_name . '.zip';
             $tmp_dir       = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
-            if (defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') {
+            if ((defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') || !is_writable($tmp_dir)) {
                 $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
             }
             $zip_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $zip_file_name;
@@ -242,7 +242,7 @@ trait DatabaseOptimize {
         $database       = sanitize_text_field($_REQUEST['database']);
         $dump_file_name = $database . '-' . date('Y-m-d-H-i-s') . '.sql';
         $tmp_dir        = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
-        if (defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') {
+        if ((defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') || !is_writable($tmp_dir)) {
             $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
         }
         $dump_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $dump_file_name;
@@ -650,7 +650,7 @@ trait DatabaseOptimize {
             $zip_file_name    = $split_path[count($split_path) - 2] . '.zip';
             $relative_path    = realpath(dirname($path) . '/..'); //for support php5.3 up | dirname($path, 2) php7.0 up;
             $tmp_dir          = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
-            if (defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') {
+            if ((defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') || !is_writable($tmp_dir)) {
                 $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
             }
             $zip_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $zip_file_name;
@@ -1045,7 +1045,7 @@ trait DatabaseOptimize {
             $zip_file_name    = $split_path[count($split_path) - 2] . '.zip';
             $relative_path    = realpath(dirname($path) . '/..'); //for support php5.3 up | dirname($path, 2) php7.0 up;
             $tmp_dir          = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
-            if (defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') {
+            if ((defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') || !is_writable($tmp_dir)) {
                 $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
             }
             $zip_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $zip_file_name;
@@ -1537,7 +1537,7 @@ trait DatabaseOptimize {
             closedir($folder);
         }
         $tmp_dir = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
-        if (defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') {
+        if ((defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') || !is_writable($tmp_dir)) {
             $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
         }
         $directory = $tmp_dir . DIRECTORY_SEPARATOR;

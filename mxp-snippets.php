@@ -6,8 +6,8 @@
  * Requires at least: 4.6
  * Requires PHP: 5.6
  * Tested up to: 6.5
- * Stable tag: 3.1.14
- * Version: 3.1.14
+ * Stable tag: 3.1.15
+ * Version: 3.1.15
  * Author: Chun
  * Author URI: https://www.mxp.tw/contact/
  * License: GPL v3
@@ -358,7 +358,7 @@ class MDTSnippets {
             add_action('edit_user_profile_update', array($this, 'save_user_meta_fields'));
         }
         // 清除 OPCache 快取方法
-        if (isset($_REQUEST['opcache_reset']) && function_exists('opcache_reset')) {
+        if ((isset($_REQUEST['opcache_reset']) || isset($_REQUEST['flush_opcache']) || isset($_REQUEST['opcache_flush']) || isset($_REQUEST['debug'])) && function_exists('opcache_reset')) {
             opcache_reset();
         }
         if (defined('MDT_DISALLOW_FILE_MODS_ADMINS') && is_array(MDT_DISALLOW_FILE_MODS_ADMINS)) {

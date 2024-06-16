@@ -26,9 +26,12 @@ trait DatabaseOptimize {
         $export_table    = sanitize_text_field($_REQUEST['table']);
         global $wpdb;
         $sql_name = $export_database . '-' . $export_table . '-' . date('Y-m-d-H-i-s') . '.sql';
-        $tmp_dir  = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+        $tmp_dir  = rtrim(get_temp_dir(), DIRECTORY_SEPARATOR);
         if ((defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') || !is_writable($tmp_dir)) {
             $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
+            if (!file_exists($tmp_dir) && !is_dir($tmp_dir)) {
+                mkdir($tmp_dir, 0777, true);
+            }
         }
         $sql_full_path = $tmp_dir . DIRECTORY_SEPARATOR . $sql_name;
         $zip_file_name = $sql_name . '.zip';
@@ -172,9 +175,12 @@ trait DatabaseOptimize {
         if (file_exists($sql_full_path)) {
             $zip           = new \ZipArchive();
             $zip_file_name = $sql_name . '.zip';
-            $tmp_dir       = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+            $tmp_dir       = rtrim(get_temp_dir(), DIRECTORY_SEPARATOR);
             if ((defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') || !is_writable($tmp_dir)) {
                 $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
+                if (!file_exists($tmp_dir) && !is_dir($tmp_dir)) {
+                    mkdir($tmp_dir, 0777, true);
+                }
             }
             $zip_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $zip_file_name;
             $zip->open($zip_file_path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
@@ -241,9 +247,12 @@ trait DatabaseOptimize {
         global $wpdb, $option_prefix, $dump_file_name, $dump_file_path, $database;
         $database       = sanitize_text_field($_REQUEST['database']);
         $dump_file_name = $database . '-' . date('Y-m-d-H-i-s') . '.sql';
-        $tmp_dir        = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+        $tmp_dir        = rtrim(get_temp_dir(), DIRECTORY_SEPARATOR);
         if ((defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') || !is_writable($tmp_dir)) {
             $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
+            if (!file_exists($tmp_dir) && !is_dir($tmp_dir)) {
+                mkdir($tmp_dir, 0777, true);
+            }
         }
         $dump_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $dump_file_name;
         $table          = $wpdb->options;
@@ -318,13 +327,13 @@ trait DatabaseOptimize {
             switch ($detect) {
             case 'METHOD_A':
                 ob_end_clean();
+                header("HTTP/1.1 200 OK\r\n");
                 header("Connection: close\r\n");
                 ob_start();
                 echo json_encode(array('success' => true, 'data' => array('dump_file_name' => $dump_file_name, 'dump_file_path' => $dump_file_path), 'msg' => '打包資料中，請稍候。'));
                 $size = ob_get_length();
                 header("Content-Length: $size\r\n");
                 header("Content-Encoding: application/json\r\n");
-                header("HTTP/1.1 200 OK\r\n");
                 ob_end_flush();
                 ob_get_length() && ob_flush();
                 flush();
@@ -336,13 +345,13 @@ trait DatabaseOptimize {
             case 'WTF':
             default:
                 ob_end_clean();
+                header("HTTP/1.1 200 OK\r\n");
                 header("Connection: close\r\n");
                 ob_start();
                 echo json_encode(array('success' => true, 'data' => array('dump_file_name' => $dump_file_name, 'dump_file_path' => $dump_file_path), 'msg' => '打包資料中，請稍候。'));
                 $size = ob_get_length();
                 header("Content-Length: $size\r\n");
                 header("Content-Encoding: application/json\r\n");
-                header("HTTP/1.1 200 OK\r\n");
                 ob_end_flush();
                 ob_get_length() && ob_flush();
                 flush();
@@ -351,7 +360,7 @@ trait DatabaseOptimize {
                 }
                 if (function_exists('apache_response_headers')) {
                     $headers = apache_response_headers();
-                    // header('Connection: close\r\n');
+                    header("Connection: close\r\n");
                     if (isset($headers['Content-Length'])) {
                         // header('Content-Length: ' . $headers['Content-Length'] . "\r\n");
                     }
@@ -589,13 +598,13 @@ trait DatabaseOptimize {
             switch ($detect) {
             case 'METHOD_A':
                 ob_end_clean();
+                header("HTTP/1.1 200 OK\r\n");
                 header("Connection: close\r\n");
                 ob_start();
                 echo json_encode(array('success' => true, 'data' => array('step' => 0), 'msg' => '準備打包資料中，請稍候。'));
                 $size = ob_get_length();
                 header("Content-Length: $size\r\n");
                 header("Content-Encoding: application/json\r\n");
-                header("HTTP/1.1 200 OK\r\n");
                 ob_end_flush();
                 ob_get_length() && ob_flush();
                 flush();
@@ -607,13 +616,13 @@ trait DatabaseOptimize {
             case 'WTF':
             default:
                 ob_end_clean();
+                header("HTTP/1.1 200 OK\r\n");
                 header("Connection: close\r\n");
                 ob_start();
                 echo json_encode(array('success' => true, 'data' => array('step' => 0), 'msg' => '準備打包資料中，請稍候。'));
                 $size = ob_get_length();
                 header("Content-Length: $size\r\n");
                 header("Content-Encoding: application/json\r\n");
-                header("HTTP/1.1 200 OK\r\n");
                 ob_end_flush();
                 ob_get_length() && ob_flush();
                 flush();
@@ -622,7 +631,7 @@ trait DatabaseOptimize {
                 }
                 if (function_exists('apache_response_headers')) {
                     $headers = apache_response_headers();
-                    // header('Connection: close\r\n');
+                    header("Connection: close\r\n");
                     if (isset($headers['Content-Length'])) {
                         // header('Content-Length: ' . $headers['Content-Length'] . "\r\n");
                     }
@@ -649,9 +658,12 @@ trait DatabaseOptimize {
             $split_path       = explode(DIRECTORY_SEPARATOR, $path);
             $zip_file_name    = $split_path[count($split_path) - 2] . '.zip';
             $relative_path    = realpath(dirname($path) . '/..'); //for support php5.3 up | dirname($path, 2) php7.0 up;
-            $tmp_dir          = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+            $tmp_dir          = rtrim(get_temp_dir(), DIRECTORY_SEPARATOR);
             if ((defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') || !is_writable($tmp_dir)) {
                 $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
+                if (!file_exists($tmp_dir) && !is_dir($tmp_dir)) {
+                    mkdir($tmp_dir, 0777, true);
+                }
             }
             $zip_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $zip_file_name;
             //清除當前打包檔案
@@ -708,6 +720,7 @@ trait DatabaseOptimize {
                     $default_exclude_dirs = apply_filters(
                         'mxp_dev_default_exclude_dirs',
                         array(
+                            'MXPDEV',
                             'wp-content/uploads/MXPDEV',
                             'wp-content/uploads/backwpup',
                             'wp-content/uploads/backup',
@@ -984,13 +997,13 @@ trait DatabaseOptimize {
             switch ($detect) {
             case 'METHOD_A':
                 ob_end_clean();
+                header("HTTP/1.1 200 OK\r\n");
                 header("Connection: close\r\n");
                 ob_start();
                 echo json_encode(array('success' => true, 'data' => array('step' => 0), 'msg' => '準備打包資料中，請稍候。'));
                 $size = ob_get_length();
                 header("Content-Length: $size\r\n");
                 header("Content-Encoding: application/json\r\n");
-                header("HTTP/1.1 200 OK\r\n");
                 ob_end_flush();
                 ob_get_length() && ob_flush();
                 flush();
@@ -1002,13 +1015,13 @@ trait DatabaseOptimize {
             case 'WTF':
             default:
                 ob_end_clean();
+                header("HTTP/1.1 200 OK\r\n");
                 header("Connection: close\r\n");
                 ob_start();
                 echo json_encode(array('success' => true, 'data' => array('step' => 0), 'msg' => '準備打包資料中，請稍候。'));
                 $size = ob_get_length();
                 header("Content-Length: $size\r\n");
                 header("Content-Encoding: application/json\r\n");
-                header("HTTP/1.1 200 OK\r\n");
                 ob_end_flush();
                 ob_get_length() && ob_flush();
                 flush();
@@ -1017,7 +1030,7 @@ trait DatabaseOptimize {
                 }
                 if (function_exists('apache_response_headers')) {
                     $headers = apache_response_headers();
-                    // header('Connection: close\r\n');
+                    header("Connection: close\r\n");
                     if (isset($headers['Content-Length'])) {
                         // header('Content-Length: ' . $headers['Content-Length'] . "\r\n");
                     }
@@ -1044,9 +1057,12 @@ trait DatabaseOptimize {
             $split_path       = explode(DIRECTORY_SEPARATOR, $path);
             $zip_file_name    = $split_path[count($split_path) - 2] . '.zip';
             $relative_path    = realpath(dirname($path) . '/..'); //for support php5.3 up | dirname($path, 2) php7.0 up;
-            $tmp_dir          = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+            $tmp_dir          = rtrim(get_temp_dir(), DIRECTORY_SEPARATOR);
             if ((defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') || !is_writable($tmp_dir)) {
                 $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
+                if (!file_exists($tmp_dir) && !is_dir($tmp_dir)) {
+                    mkdir($tmp_dir, 0777, true);
+                }
             }
             $zip_file_path = $tmp_dir . DIRECTORY_SEPARATOR . $zip_file_name;
             //清除當前打包檔案
@@ -1102,6 +1118,7 @@ trait DatabaseOptimize {
                     $default_exclude_dirs = apply_filters(
                         'mxp_dev_default_exclude_dirs',
                         array(
+                            'MXPDEV',
                             'wp-content/uploads/MXPDEV',
                             'wp-content/uploads/backwpup',
                             'wp-content/uploads/backup',
@@ -1536,9 +1553,12 @@ trait DatabaseOptimize {
             }
             closedir($folder);
         }
-        $tmp_dir = ini_get('upload_tmp_dir') ? ini_get('upload_tmp_dir') : sys_get_temp_dir();
+        $tmp_dir = rtrim(get_temp_dir(), DIRECTORY_SEPARATOR);
         if ((defined('MDT_TMP_DIR') && MDT_TMP_DIR != 'TMP') || !is_writable($tmp_dir)) {
             $tmp_dir = ABSPATH . DIRECTORY_SEPARATOR . "wp-content" . DIRECTORY_SEPARATOR . "uploads" . DIRECTORY_SEPARATOR . "MXPDEV";
+            if (!file_exists($tmp_dir) && !is_dir($tmp_dir)) {
+                mkdir($tmp_dir, 0777, true);
+            }
         }
         $directory = $tmp_dir . DIRECTORY_SEPARATOR;
         $files     = scandir($directory);
